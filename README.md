@@ -18,7 +18,7 @@ Developed and used on macOS with Python 3.11. Windows and Linux are untested (se
 ## Install
 
 ```bash
-git clone <this repo> arch-skills
+git clone https://github.com/zohartito/arch-skills.git
 cd arch-skills
 
 # Python environment for the scripts
@@ -61,7 +61,7 @@ in each SKILL.md lists the phrases).
 
 | Skill | What it does | Needs |
 |---|---|---|
-| `sheet-review` | Preflight of an exported sheet PDF (size, fonts, image PPI, small/placeholder text, hairlines, off-palette and legend-only colours, diff against the previous export), tile images for a visual pass, optional read-only InDesign audit | PyMuPDF; InDesign + an `execute_extend_script` MCP tool for the audit |
+| `sheet-review` | Preflight of an exported sheet PDF (size, fonts, image PPI, small/placeholder text, hairlines, off-palette and legend-only colours, diff against the previous export), tile images for a visual pass, optional read-only InDesign audit | PyMuPDF; for the audit, InDesign + an `execute_extend_script` tool that is not in upstream adb-mcp yet (see Limits) |
 | `rhino-safe-capture` | Rules for capturing from Rhino without changing the user's open document, plus a hook that blocks mutating Rhino MCP calls | Rhino 8 with the `rhino-mcneel` or `rhino-community` MCP server; Claude Code for the hook |
 | `physical-model-prep` | Fabrication rules, laser layer conventions, starting laser settings (ULS PLS6.150D), fit clearances, mesh checks, verified USB staging | rhino3dm, trimesh |
 | `bambu-print-recipes` | Bambu Studio settings and orientation for model parts (roofs, fins, railings, screens, furniture, figures), keeping supports off delicate parts | Bambu Studio; no scripts |
@@ -118,16 +118,17 @@ python3 scripts/check_ledger.py path/to/dossier
   used on one studio project's models in October 2026. Many are marked "untested" or "starting point" in the files
   for that reason. Re-test on your own machines and materials.
 - The SKILL.md files mention source files, handoff notes and models from that project; those are not included.
-- The InDesign audit runner (`sheet-review/scripts/run_indesign_audit.py`) loads `~/adb-mcp/mcp/id-mcp.py` and calls
-  an `execute_extend_script` function in it. The upstream adb-mcp InDesign server did not have that function when
-  this was written, so you need a server that provides it, or run `indesign_audit.jsx` through your own ExtendScript
-  tool. It was only used on macOS.
+- **The InDesign audit needs a tool that is not upstream yet.** `sheet-review/scripts/run_indesign_audit.py` (and the
+  MCP route in that SKILL.md) need an `execute_extend_script` tool. It comes from a fork of the adb-mcp Adobe
+  connector and is not in upstream adb-mcp yet. The runner loads it from `~/adb-mcp/mcp/id-mcp.py`. Without that
+  tool, the InDesign audit step does not work: run `indesign_audit.jsx` through your own ExtendScript tool, or skip
+  the step. The PDF preflight does not need it. It was only used on macOS.
 - `stage_usb.py` was written for macOS (`/Volumes`, and `F_NOCACHE` so the re-read comes from the stick, not the
   page cache). It imports `fcntl`, so it does not run on Windows; Linux is untested.
 - `printables.py` uses the GraphQL API that the printables.com pages call. It is unofficial and may change or stop
   working. Check each model's licence before you use it.
 - `sun-study` computes direct sun only: no diffuse light, radiation, or daylight metrics. Its one built-in site
-  preset is `venice-ca`; use `--lat/--lon/--tz` or `--epw` for anywhere else.
+  preset is `los-angeles-ca`; use `--lat/--lon/--tz` or `--epw` for anywhere else.
 - `rhino-safe-capture`'s hook cannot tell a slot the agent spawned from one it adopted, and it does not cover the
   community server's single-object tools. The SKILL.md says so.
 - `bambu-print-recipes` uses Bambu Studio 2.x labels and the macOS preset folder.

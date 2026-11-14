@@ -16,7 +16,7 @@ import numpy as np
 
 SITE_PRESETS = {
     # name: (latitude, longitude, standard-time UTC offset in hours)
-    "venice-ca": (33.985, -118.469, -8.0),
+    "los-angeles-ca": (34.052, -118.244, -8.0),
 }
 
 # Meters per model unit, keyed by rhino3dm.UnitSystem name (also accepted by --units).

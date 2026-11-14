@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Run indesign_audit.jsx in the running InDesign without an MCP client (e.g. from Codex).
 
-Reuses an execute_extend_script function from an adb-mcp InDesign server (~/adb-mcp/mcp/id-mcp.py), so run it
+Reuses an execute_extend_script function from an adb-mcp InDesign server (~/adb-mcp/mcp/id-mcp.py). That function
+comes from a fork of the adb-mcp Adobe connector and is not in upstream adb-mcp yet. Run it
 with that server's venv:  <adb-mcp venv>/bin/python run_indesign_audit.py ...
 It never launches InDesign.
 """

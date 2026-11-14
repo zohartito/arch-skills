@@ -17,6 +17,9 @@ Scripts live in this skill's `scripts/` folder; run commands from the skill fold
 1. **Pin the artifact.** Record the PDF path and its INDD, with the sha256 and mtime of both.
    Review the exported PDF, not a description of it.
 2. **InDesign audit** (when the INDD is open). It only reads and never launches InDesign.
+   **Limit:** both routes below need an `execute_extend_script` tool from a fork of the adb-mcp
+   Adobe connector. That tool is not in upstream adb-mcp yet. If it isn't available, say the
+   audit was not run and list it under *not checked*. The PDF preflight (step 3) does not need it.
    - MCP: read `indesign_audit.jsx`, set `TARGET_DOC_NAME` to the document name, and pass the
      text to an InDesign MCP tool named `execute_extend_script` (see the repository README). Pass `app_name`
      when both the release and Beta InDesign are running.

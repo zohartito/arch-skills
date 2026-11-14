@@ -1,6 +1,6 @@
 ---
 name: sun-study
-description: Headless sun-path and direct-sun-hours analysis from a script, no Rhino or Grasshopper GUI and no Rhino MCP. Ladybug Tools computes sun positions for a site (lat/lon/tz, an EPW, or the venice-ca preset), and trimesh/Embree casts rays from an analysis grid toward the sun through context geometry (.3dm, .stl, .obj, .ply). Outputs per-point hours as CSV, a JSON summary and a plan heatmap PNG. It can also print a sun altitude/azimuth table. Use when asked about "sun hours", "direct sun hours", "shadow study", "winter sun", "solar access", "sun path", "how much sun does the courtyard get", "is this space shaded on Dec 21", or for a numeric check of a massing's sun exposure.
+description: Headless sun-path and direct-sun-hours analysis from a script, no Rhino or Grasshopper GUI and no Rhino MCP. Ladybug Tools computes sun positions for a site (lat/lon/tz, an EPW, or the los-angeles-ca preset), and trimesh/Embree casts rays from an analysis grid toward the sun through context geometry (.3dm, .stl, .obj, .ply). Outputs per-point hours as CSV, a JSON summary and a plan heatmap PNG. It can also print a sun altitude/azimuth table. Use when asked about "sun hours", "direct sun hours", "shadow study", "winter sun", "solar access", "sun path", "how much sun does the courtyard get", "is this space shaded on Dec 21", or for a numeric check of a massing's sun exposure.
 ---
 
 # sun-study
@@ -13,10 +13,10 @@ PY=python   # a Python with the repository's requirements-arch-tools.txt install
 S=scripts/sun_study.py   # run from this skill's folder
 
 # Sun position table (no geometry needed)
-$PY $S --site venice-ca --date 12-21 --hours 7-17 --step-min 30 --sunpath-only [--out DIR]
+$PY $S --site los-angeles-ca --date 12-21 --hours 7-17 --step-min 30 --sunpath-only [--out DIR]
 
 # Direct sun hours on a rectangle (grid coordinates in MODEL units)
-$PY $S --site venice-ca --date 12-21 --hours 8-16 --step-min 15 \
+$PY $S --site los-angeles-ca --date 12-21 --hours 8-16 --step-min 15 \
   --geometry model.3dm --layers "01 WALLS" "04 ROOFS" \
   --grid-rect X0 Y0 X1 Y1 --grid-z 0 --spacing 2 --threshold 2 --out /tmp/sun_dec21
 
@@ -27,7 +27,7 @@ $PY $S --lat 34.05 --lon -118.25 --tz -8 --start 12-01 --end 02-28 --hours 9-15 
 Tests (from this skill's folder): `$PY -m pytest tests -q`
 
 ## Inputs
-- **Location**: pick one of `--site venice-ca` (33.985, -118.469, UTC-8), `--epw file.epw` (only its location is used), or `--lat --lon --tz`. `--tz` is the **standard-time** offset. There is no DST, so clock times are local standard time (PDT 13:00 = 12:00 here).
+- **Location**: pick one of `--site los-angeles-ca` (34.052, -118.244, UTC-8), `--epw file.epw` (only its location is used), or `--lat --lon --tz`. `--tz` is the **standard-time** offset. There is no DST, so clock times are local standard time (PDT 13:00 = 12:00 here).
 - **North**: `--north DEG` uses the Ladybug convention, north rotated counter-clockwise from +Y. The default 0 means +Y is north.
 - **Period**: `--date MM-DD`, or `--start MM-DD --end MM-DD` (inclusive; a range like 11-01 to 02-28 wraps across New Year). `--hours 8-16` is a clock window and defaults to 0-24. `--step-min` defaults to 15. Each timestep is the **midpoint** of its interval. Sun below the horizon is skipped.
 - **Geometry**:

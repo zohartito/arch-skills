@@ -12,28 +12,28 @@ import trimesh
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import sun_study  # noqa: E402
 
-VENICE = sun_study.Site("venice-ca", 33.985, -118.469, -8.0, "preset")
+LOS_ANGELES = sun_study.Site("los-angeles-ca", 34.052, -118.244, -8.0, "preset")
 OBLIQUITY = 23.44
 
 
 def solar_noon_altitude(month, day):
     from ladybug.sunpath import Sunpath
-    sunpath = Sunpath(VENICE.latitude, VENICE.longitude, VENICE.time_zone)
+    sunpath = Sunpath(LOS_ANGELES.latitude, LOS_ANGELES.longitude, LOS_ANGELES.time_zone)
     return sunpath.calculate_sun(month, day, 12, is_solar_time=True).altitude
 
 
 def test_winter_solstice_noon_altitude():
-    expected = 90 - VENICE.latitude - OBLIQUITY  # ~32.58
+    expected = 90 - LOS_ANGELES.latitude - OBLIQUITY  # ~32.51
     assert solar_noon_altitude(12, 21) == pytest.approx(expected, abs=0.5)
 
 
 def test_summer_solstice_noon_altitude():
-    expected = 90 - VENICE.latitude + OBLIQUITY  # ~79.46
+    expected = 90 - LOS_ANGELES.latitude + OBLIQUITY  # ~79.39
     assert solar_noon_altitude(6, 21) == pytest.approx(expected, abs=0.5)
 
 
 def test_sun_vector_points_at_sun():
-    sample = sun_study.sun_samples(VENICE, [sun_study.parse_month_day("12-21")], [12.0])[0]
+    sample = sun_study.sun_samples(LOS_ANGELES, [sun_study.parse_month_day("12-21")], [12.0])[0]
     altitude_from_vector = math.degrees(math.asin(sample.vector[2]))
     assert altitude_from_vector == pytest.approx(sample.altitude, abs=1e-6)
     assert sample.vector[1] < 0  # winter noon sun is due south (-Y)
@@ -49,7 +49,7 @@ def east_west_wall(height, length=200.0, thickness=0.2):
 def test_wall_shadow_length_matches_trigonometry():
     height, thickness = 5.0, 0.2
     wall = east_west_wall(height, thickness=thickness)
-    sample = sun_study.sun_samples(VENICE, [sun_study.parse_month_day("12-21")], [12.0])[0]
+    sample = sun_study.sun_samples(LOS_ANGELES, [sun_study.parse_month_day("12-21")], [12.0])[0]
     to_sun = np.array([sample.vector])
     horizontal = to_sun[0, :2] / np.linalg.norm(to_sun[0, :2])
     shadow_length = height / math.tan(math.radians(sample.altitude))  # along azimuth
@@ -70,7 +70,7 @@ def test_open_ground_gets_all_daylight_steps():
     days = [sun_study.parse_month_day("03-20")]
     step_min = 15
     hours = sun_study.timestep_hours(0, 24, step_min)
-    samples = sun_study.sun_samples(VENICE, days, hours)
+    samples = sun_study.sun_samples(LOS_ANGELES, days, hours)
     vectors = np.array([s.vector for s in samples])
     points = sun_study.rect_grid(0, 0, 10, 10, 0, 2)
     # Far-away obstacle that never intersects upward rays from the grid.
@@ -120,7 +120,7 @@ def test_cli_end_to_end(tmp_path):
     write_mm_box_3dm(path)
     out = tmp_path / "out"
     summary = sun_study.run([
-        "--site", "venice-ca", "--date", "12-21", "--hours", "8-16", "--step-min", "30",
+        "--site", "los-angeles-ca", "--date", "12-21", "--hours", "8-16", "--step-min", "30",
         "--geometry", str(path), "--grid-rect", "-3000", "-3000", "3000", "3000",
         "--spacing", "500", "--out", str(out)])
     assert {p.name for p in out.iterdir()} == {"sun_hours.csv", "summary.json", "sun_hours.png"}
@@ -159,7 +159,7 @@ def test_grid_from_layer_closed_curve(tmp_path):
     model.Objects.AddCurve(curve, attributes)
     model.Write(str(path), 8)
     summary = sun_study.run([
-        "--site", "venice-ca", "--date", "12-21", "--hours", "8-16", "--step-min", "60",
+        "--site", "los-angeles-ca", "--date", "12-21", "--hours", "8-16", "--step-min", "60",
         "--geometry", str(path), "--grid-from-layer", "Court", "--spacing", "1000",
         "--out", str(tmp_path / "out")])
     assert summary["grid"]["count"] == 16  # 8 m x 2 m strip at 1 m spacing
