@@ -1,0 +1,23 @@
+{
+  "skill_name": "printables-entourage",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "shouldnt i add entourage in the shared garden of the massing model, make it feel lively with people and dogs, and cars on the street. massing is 1/8\" scale. find stuff I can print, not low poly",
+      "expected_output": "Searches Printables via the API (no browser downloads), surveys photos and rejects low-poly, downloads to a downloads folder with a licence ledger, scales to real sizes at 3.175 mm/ft, repairs every item to 0 bad edges, builds a plate, renders it, gives a short placement suggestion tied to the design argument.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "give me just the chunk scale cats and that same scale people i can print. chunk is 1/4\"",
+      "expected_output": "1:50 scanned people rescaled x50/48 with display bases cut, cats at real size (~0.95 ft sitting), one repaired plate under ~20 MB, sizes table in mm and ft, 0.2 nozzle recipe.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "do you think i should put people and pets in the chunk unit model or leave it minimalistic",
+      "expected_output": "A judgement grounded in what the model argues (crit rule: entourage only where it supports the argument), a small number of figures placed to explain the design, checks what the model actually contains, no asset downloading needed.",
+      "files": []
+    }
+  ]
+}

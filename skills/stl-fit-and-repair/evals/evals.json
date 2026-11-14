@@ -1,0 +1,23 @@
+{
+  "skill_name": "stl-fit-and-repair",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "make sure the new roof isn't detached anywhere, it has to be a whole piece not thin at connections, and make sure it fits when I put it on the walls I already printed. roof is roofweld/run/pair-A-roof.stl, the printed walls are print-files/massing/pair-A-walls.stl, placements.json is next to them",
+      "expected_output": "A fitted roof STL that is one body, watertight, zero bad edges, ~0 overlap with the printed walls, drop-on path clear, made with the walls grown ~0.15 mm; numbers reported; a render shown; original files not overwritten.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "bambu says this car has 2000 open edges and it's like 15 separate pieces, can you repair it so it prints as one solid? it's the Ford Focus on 08 FURNITURE AND FIXTURES::V15 SOURCED ASSETS::VEHICLES in model_v22.3dm, 1/8 scale",
+      "expected_output": "Extracts the open render meshes read-only from the saved .3dm at 3.175 mm/ft, fuses them with voxel solidify (not pymeshfix alone), one body, 0 bad edges, real-size check (~14.3 ft long), render shown.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "the supports keep touching the terrace pickets on the walls print and the posts broke last time, I tried build plate only and it's still touching. can you fix the model so it doesn't need support there",
+      "expected_output": "Changes geometry rather than only settings: removes overhangs that need support (top rail) or ties hanging picket ends back to the wall, keeps one body, writes a new clearly named file, renders the railing zoomed, recommends slicer settings as a second line of defence.",
+      "files": []
+    }
+  ]
+}

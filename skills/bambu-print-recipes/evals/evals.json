@@ -1,0 +1,23 @@
+{
+  "skill_name": "bambu-print-recipes",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "what bambu studio settings for the roofs? A1, 0.4 nozzle, white PLA",
+      "expected_output": "A complete recipe (preset, layer height, walls, top/bottom, infill, tree supports with top Z distance and interface layers, brim), orientation as loaded with seams up, no auto-orient, don't split into parts, post-print sanding only on mating faces.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "im printing the two bridges, the cars, the table set and the garden screens on one plate on the A1, what settings should i do. i have petg in slot 2",
+      "expected_output": "One combined recipe with build-plate-only supports, per-object brim for tall thin bridges, filament slot warning (everything on slot 1), orientation per part type, spacing, preview check.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "the bridges are already printing on the A1 with the old post holes, should i reprint with the new files?",
+      "expected_output": "Compares what changed between versions and whether the printing part still works with what is built; does not reflexively recommend a reprint.",
+      "files": []
+    }
+  ]
+}

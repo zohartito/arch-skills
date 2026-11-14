@@ -1,0 +1,23 @@
+{
+  "skill_name": "model-assembly-sheet",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "whats the brass lengths for the bridge posts and is it considering that its going through a 3/16\" board? the houses sit on the flat plywood lot now",
+      "expected_output": "Cut lengths = above-lot + one 3/16 layer socket (4.8 mm) + the 1.0 mm seating offset because the walls were designed to sink into a pocket; table of all posts; tolerance and glue-at-the-lot method.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "A1 inner 79.8 mm, A1 outer 70.9, B1 inner 78.1, B1 outer 70.7, A2 inner 69.3, A2 outer 60.8, B2 inner 68.6, B2 outer 59.9 - how do i know which post is which",
+      "expected_output": "A naming rule read off the model (zone letter, bridge number, inner/outer) with a stated viewpoint, a table laid out as the holes appear, sanity checks (inner taller than outer, west taller than east), tape flags; ideally a 1:1 sheet with labelled holes.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "make me a 1:1 sheet so i know where to glue the garden screens, the table set and the downpipes on the lot",
+      "expected_output": "A PDF at true scale with a 50 mm check bar, outlines from sections of the printed STLs in the model frame, labelled post holes, orientation arrows, print-at-100% and pin-prick instructions, PNG preview inspected.",
+      "files": []
+    }
+  ]
+}
