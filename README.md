@@ -110,7 +110,11 @@ python3 scripts/check_ledger.py path/to/dossier
 - `skills/rhino-safe-capture/tests/test_rhino_live_guard.py` (unittest)
 - `skills/sheet-review/tests/seeded_eval.py SHEET.pdf --work DIR --palette "#000000,#ffffff"` plants five known
   defects in a copy of a sheet and scores the preflight against them. It needs a real sheet PDF (none is included).
-- `skills/*/evals/evals.json` hold example prompts with expected behaviour, for agent evals. No runner is included.
+- `skills/*/evals/evals.json` hold example prompts with expected behaviour, for agent evals.
+- [`evals/`](evals/README.md) contains a 60-query Claude Code trigger corpus, a quota-conscious runner,
+  a scoring CLI, and a synthetic PDF baseline fixture. Start with
+  `python3 evals/run_triggers.py --limit 4 --dry-run`. The recorded smoke check covers 2/60 queries;
+  the full sweep and paired baseline have not been run.
 
 ## Limits
 
