@@ -56,6 +56,8 @@ def main(argv=None):
     mode.add_argument("--run", action="store_true", help="consume two subscription sessions")
     mode.add_argument("--dry-run", action="store_true")
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--timeout", type=int, default=600,
+                        help="seconds per session; a full sheet review needs more than a trigger check (default: 600)")
     args = parser.parse_args(argv)
     if not args.run:
         for disabled in (False, True):
@@ -76,7 +78,8 @@ def main(argv=None):
                     shutil.copyfile(fixture, work / "fixture.pdf")
                     shutil.copytree(ROOT / "skills/sheet-review/scripts", work / "pdf-tools",
                                     ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
-                    result = run_session(command(work, PROMPT, baseline=True, disabled=disabled), work)
+                    result = run_session(command(work, PROMPT, baseline=True, disabled=disabled), work,
+                                         timeout=args.timeout)
                     label = "without skills" if disabled else "with skills"
                     records[label] = result
                     report.seek(0)

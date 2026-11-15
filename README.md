@@ -113,8 +113,9 @@ python3 scripts/check_ledger.py path/to/dossier
 - `skills/*/evals/evals.json` hold example prompts with expected behaviour, for agent evals.
 - [`evals/`](evals/README.md) contains a 60-query Claude Code trigger corpus, a quota-conscious runner,
   a scoring CLI, and a synthetic PDF baseline fixture. Start with
-  `python3 evals/run_triggers.py --limit 4 --dry-run`. The recorded smoke check covers 2/60 queries;
-  the full sweep and paired baseline have not been run.
+  `python3 evals/run_triggers.py --limit 4 --dry-run`. The full 60-query sweep and one
+  paired baseline were run on 2026-11-15: see
+  [`evals/results/sweep-2026-11-15.md`](evals/results/sweep-2026-11-15.md) for the counts and what they do not show.
 
 ## Limits
 

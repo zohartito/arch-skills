@@ -1,6 +1,6 @@
 ---
 name: sun-study
-description: Headless sun-path and direct-sun-hours analysis from a script, no Rhino or Grasshopper GUI and no Rhino MCP. Ladybug Tools computes sun positions for a site (lat/lon/tz, an EPW, or the los-angeles-ca preset), and trimesh/Embree casts rays from an analysis grid toward the sun through context geometry (.3dm, .stl, .obj, .ply). Outputs per-point hours as CSV, a JSON summary and a plan heatmap PNG. It can also print a sun altitude/azimuth table. Use when asked about "sun hours", "direct sun hours", "shadow study", "winter sun", "solar access", "sun path", "how much sun does the courtyard get", "is this space shaded on Dec 21", or for a numeric check of a massing's sun exposure.
+description: Headless sun-path and direct-sun-hours analysis from a script, no Rhino or Grasshopper GUI and no Rhino MCP. Ladybug Tools computes sun positions for a site (lat/lon/tz, an EPW, or the los-angeles-ca preset), and trimesh/Embree casts rays from an analysis grid toward the sun through context geometry (.3dm, .stl, .obj, .ply). Outputs per-point hours as CSV, a JSON summary and a plan heatmap PNG. It can also print a sun altitude/azimuth table. Use when asked about "sun hours", "direct sun hours", "shadow study", "winter sun", "solar access", "sun path", "how much sun does the courtyard get", "is this space shaded on Dec 21", or for a numeric check of a massing's sun exposure. Direct sun only: not for daylight factor, sDA/ASE, illuminance or glare, which need a diffuse-sky daylight simulation.
 ---
 
 # sun-study
