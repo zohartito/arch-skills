@@ -28,7 +28,7 @@ The process group is killed on timeout. An error, usage-limit response or observ
 event stops further scheduling. With concurrent batches, already-started sessions may
 finish. Two opening attempts with no Skill call also stop the run.
 
-The following commands are prepared for later; **neither was run for the recorded smoke check**.
+The following commands were not part of the recorded smoke check; both were run later (see `results/sweep-2026-11-15.md`).
 They spend subscription quota. A complete sweep starts up to 60 new sessions, including
 the two smoke queries again. The baseline starts up to two more.
 
@@ -132,7 +132,7 @@ temporary directories. Only its second command adds `--disable-slash-commands`.
 Both commands can read files and execute `python3` shell commands; neither has app/MCP
 tools. The prompt explicitly says `fixture PDF only; do not open InDesign or any app`,
 and prohibits reading SKILL.md directly. The shell restriction and prompt are task
-constraints, not an operating-system sandbox. No baseline session was run in this change.
+constraints, not an operating-system sandbox. `run_baseline.py --timeout` sets the per-session limit (default 600 seconds).
 
 Baseline messages count the submitted prompt plus unique assistant messages and emitted
 user/tool-result messages. Failed calls count unique `tool_result` IDs marked `is_error`.
@@ -145,6 +145,7 @@ these metrics alone cannot demonstrate better task quality.
 
 `results/baseline-2026-11-15.md` records a deferred comparison, not measured results.
 `results/verification-2026-11-15.md` records the smoke evidence and remaining checks.
+`results/sweep-2026-11-15.md` records the full sweep, the description change it led to, and one baseline pair.
 
 ## Scope limits
 
