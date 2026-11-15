@@ -135,4 +135,17 @@ python3 scripts/check_ledger.py path/to/dossier
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE). That covers the files in this repository.
+
+The scripts import third-party packages that keep their own licences. Four of the packages pinned in
+`requirements-arch-tools.txt` declare AGPL-3.0:
+
+| Package | Used by | Declared licence |
+|---|---|---|
+| PyMuPDF | `sheet-review` | AGPL-3.0, or a commercial licence from Artifex |
+| pymeshfix | `stl-fit-and-repair` | AGPL-3.0 |
+| ladybug-core, ladybug-geometry | `sun-study` | AGPL-3.0 |
+
+Running the scripts on your own machine is not affected. If you redistribute them together with those packages, or run
+them as a service that other people reach over a network, the AGPL applies to that combined work. Read each package's
+licence before you do. This note is a pointer, not legal advice.
