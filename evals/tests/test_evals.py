@@ -195,6 +195,24 @@ class ExecutionTests(unittest.TestCase):
             self.assertEqual("timeout", row["status"])
             kill.assert_called_once()
 
+    def test_interrupt_stops_the_session_before_propagating(self):
+        import sys
+        import tempfile
+        real_popen = subprocess.Popen
+        started = []
+
+        def sleeper(cmd, **kwargs):
+            proc = real_popen([sys.executable, "-c", "import time; time.sleep(60)"], **kwargs)
+            started.append(proc)
+            return proc
+
+        with tempfile.TemporaryDirectory() as work, patch("subprocess.Popen", side_effect=sleeper), \
+                patch.object(real_popen, "communicate", side_effect=KeyboardInterrupt):
+            with self.assertRaises(KeyboardInterrupt):
+                common.run_session(["claude"], Path(work))
+        # The child was killed and reaped: poll() reports an exit status, not None.
+        self.assertIsNotNone(started[0].poll())
+
 
 class ScoreTests(unittest.TestCase):
     def setUp(self):

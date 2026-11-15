@@ -237,5 +237,15 @@ def run_session(cmd, work, timeout=120):
         timed_out = True
         os.killpg(proc.pid, signal.SIGKILL)
         stdout, stderr = proc.communicate()
+    except BaseException:
+        # Ctrl-C or any other interruption: the session runs in its own process group,
+        # so it never sees the terminal's SIGINT. Stop the group and reap it before
+        # re-raising, or it keeps running (and spending quota) after the runner exits.
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        proc.wait()
+        raise
     return parse_stream(stdout, stderr, work=work, returncode=proc.returncode,
                         timed_out=timed_out, wall_ms=round((time.monotonic() - start) * 1000))
