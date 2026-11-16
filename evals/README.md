@@ -147,6 +147,52 @@ these metrics alone cannot demonstrate better task quality.
 `results/verification-2026-11-15.md` records the smoke evidence and remaining checks.
 `results/sweep-2026-11-15.md` records the full sweep, the description change it led to, and one baseline pair.
 
+## `claude plugin eval` suite
+
+`evals/plugin-eval/` holds a suite in Claude Code's own
+[plugin eval format](https://code.claude.com/docs/en/plugin-evals) for `sheet-review` and `bambu-print-recipes`:
+the 30 `triggers.csv` rows for those skills (a `tool_used: Skill` grader; negatives require zero calls in both arms)
+and six content cases graded with `regex` and `llm` graders. `.claude-plugin/plugin.json` makes the repository a plugin
+named `arch-skills` and points `experimental.evals` at that directory. It does not change the symlink install above.
+Each run is isolated by the tool: no personal settings, skills, hooks, CLAUDE.md or MCP servers load, unlike the
+trigger runner. Case files are generated; edit `plugin_eval.py`, not the Markdown:
+
+```bash
+python3 evals/plugin_eval.py build      # rewrite evals/plugin-eval/ from triggers.csv + CONTENT
+python3 evals/plugin_eval.py check      # exit 1 if the committed suite is out of date
+claude plugin eval . --tag smoke --runs 1 --model haiku --judge-model haiku \
+  --max-cost-usd 1.5 --trust-plugin --no-publish --output-dir <scratch dir>
+python3 evals/plugin_eval.py summarize <scratch dir>/aggregate-result.json \
+  --json-out evals/results/plugin-eval-<date>.json --md-out evals/results/plugin-eval-<date>.md
+```
+
+The `smoke` tag selects six cases. Without `--tag` the command runs all 36 cases, by default three runs each in two
+arms (216 agent runs) plus judge calls: that is a sweep, and it spends quota. The judge defaults to Haiku; the agent
+model defaults to the configured one. The tool's raw `aggregate-result.json` contains prompts, replies and local
+paths, so only the summarized JSON is committed. See `results/plugin-eval-2026-11-15.md`.
+
+## SkillEvaluator static checks
+
+[NVIDIA SkillEvaluator](https://github.com/NVIDIA/SkillEvaluator) (Apache-2.0, Python 3.12+) gives each skill an
+independent quality score. Install it in a throwaway virtual environment, never globally. Keyless Tier 1, without the
+SkillSpector security scan (it downloads a scanner) or the dependency audit; the PII check uses a local `gitleaks`:
+
+```bash
+python3.13 -m venv /tmp/se && /tmp/se/bin/pip install "skillevaluator[tier2]"
+for s in skills/*/; do /tmp/se/bin/skillevaluator tier1 "$s" --no-llm \
+  --checks schema,version,pii,license,code-integrity,unicode,quality,lint -r json -o "/tmp/se-out/$(basename "$s")"; done
+# overlap between skills, with local Ollama embeddings (no external calls):
+SKILL_EVAL_EMBEDDING_PROVIDER=openai-compatible SKILL_EVAL_EMBEDDING_BASE_URL=http://127.0.0.1:11434/v1 \
+SKILL_EVAL_EMBEDDING_MODEL=nomic-embed-text SKILL_EVAL_EMBEDDING_API_KEY=local-no-key \
+  /tmp/se/bin/skillevaluator similarity-check skills -r json -o /tmp/se-sim
+python3 evals/summarize_skillevaluator.py --tier1 /tmp/se-out/*/skillevaluator-tier1.json \
+  --similarity descriptions=/tmp/se-sim/skillevaluator-similarity.json \
+  --json-out evals/results/skillevaluator-<date>.json --md-out evals/results/skillevaluator-<date>.md
+```
+
+Tier 2 chat checks, the rubric and Tier 3 live runs need a model provider and were not run. See
+`results/skillevaluator-2026-11-15.md`.
+
 ## Scope limits
 
 `GUIDE.html` was absent from this checkout. The supplied card's testing criteria were used.

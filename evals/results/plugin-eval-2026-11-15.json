@@ -1,0 +1,450 @@
+{
+  "schemaVersion": 1,
+  "claudeVersion": "2.1.325",
+  "startedAt": "2026-11-16T01:40:08.941Z",
+  "durationSeconds": 93,
+  "costUsd": 0.024540880000000004,
+  "partial": false,
+  "aggregates": {
+    "casesTotal": 6,
+    "casesPassed": 6,
+    "overallScore": 1,
+    "overallPassRate": 1,
+    "meanDelta": 0.6111111111111112
+  },
+  "suite": {
+    "ablation": "with-without",
+    "modelOverride": "haiku",
+    "judgeModel": "haiku",
+    "tagFilters": [
+      "smoke"
+    ],
+    "threshold": 1,
+    "concurrency": 1,
+    "plugins": [
+      "arch-skills"
+    ]
+  },
+  "cases": [
+    {
+      "name": "bambu-print-recipes-content-railing-supports",
+      "dir": "evals/plugin-eval/bambu-print-recipes/bambu-print-recipes-content-railing-supports",
+      "maxTurns": 6,
+      "aggregates": {
+        "score": 1,
+        "passRate": 1,
+        "scoreWithout": 0,
+        "passRateWithout": 0,
+        "delta": 1
+      },
+      "arms": {
+        "with": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 3,
+            "costUsd": 0.0029858800000000002,
+            "judgeCostUsd": 0.00023100000000000003,
+            "durationSeconds": 8,
+            "error": null,
+            "aborted": false,
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "skill-fired",
+                "type": "tool_used",
+                "passed": true,
+                "scored": false,
+                "judgeVotes": null
+              },
+              {
+                "name": "verdict",
+                "type": "llm",
+                "passed": true,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ]
+              },
+              {
+                "name": "xy-distance",
+                "type": "regex",
+                "passed": true,
+                "scored": true,
+                "judgeVotes": null
+              }
+            ]
+          }
+        ],
+        "without": [
+          {
+            "score": 0,
+            "passed": false,
+            "turns": 1,
+            "costUsd": 0.0015666500000000002,
+            "judgeCostUsd": 0.00022530000000000006,
+            "durationSeconds": 9,
+            "error": null,
+            "aborted": false,
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "verdict",
+                "type": "llm",
+                "passed": false,
+                "scored": true,
+                "judgeVotes": [
+                  false,
+                  false,
+                  false
+                ]
+              },
+              {
+                "name": "xy-distance",
+                "type": "regex",
+                "passed": false,
+                "scored": true,
+                "judgeVotes": null
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "bambu-print-recipes-neg-r48",
+      "dir": "evals/plugin-eval/bambu-print-recipes/bambu-print-recipes-neg-r48",
+      "maxTurns": 4,
+      "aggregates": {
+        "score": 1,
+        "passRate": 1,
+        "scoreWithout": 1,
+        "passRateWithout": 1,
+        "delta": 0
+      },
+      "arms": {
+        "with": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 1,
+            "costUsd": 0.0017317300000000001,
+            "judgeCostUsd": 0,
+            "durationSeconds": 5,
+            "error": null,
+            "aborted": false,
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "skill-not-fired",
+                "type": "tool_used",
+                "passed": true,
+                "scored": true,
+                "judgeVotes": null
+              }
+            ]
+          }
+        ],
+        "without": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 1,
+            "costUsd": 0.00124214,
+            "judgeCostUsd": 0,
+            "durationSeconds": 6,
+            "error": null,
+            "aborted": false,
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "skill-not-fired",
+                "type": "tool_used",
+                "passed": true,
+                "scored": true,
+                "judgeVotes": null
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "bambu-print-recipes-pos-r04",
+      "dir": "evals/plugin-eval/bambu-print-recipes/bambu-print-recipes-pos-r04",
+      "maxTurns": 4,
+      "aggregates": {
+        "score": 1,
+        "passRate": 1,
+        "scoreWithout": 0,
+        "passRateWithout": 0,
+        "delta": 1
+      },
+      "arms": {
+        "with": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 3,
+            "costUsd": 0.00247063,
+            "judgeCostUsd": 0,
+            "durationSeconds": 5,
+            "error": null,
+            "aborted": false,
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "skill-fired",
+                "type": "tool_used",
+                "passed": true,
+                "scored": true,
+                "judgeVotes": null
+              }
+            ]
+          }
+        ],
+        "without": [
+          {
+            "score": 0,
+            "passed": false,
+            "turns": 1,
+            "costUsd": 0.0017886699999999998,
+            "judgeCostUsd": 0,
+            "durationSeconds": 12,
+            "error": null,
+            "aborted": false,
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "skill-fired",
+                "type": "tool_used",
+                "passed": false,
+                "scored": true,
+                "judgeVotes": null
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "sheet-review-content-hairline-small-text",
+      "dir": "evals/plugin-eval/sheet-review/sheet-review-content-hairline-small-text",
+      "maxTurns": 6,
+      "aggregates": {
+        "score": 1,
+        "passRate": 1,
+        "scoreWithout": 0.3333333333333333,
+        "passRateWithout": 0,
+        "delta": 0.6666666666666667
+      },
+      "arms": {
+        "with": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 1,
+            "costUsd": 0.00248603,
+            "judgeCostUsd": 0.0005646999999999999,
+            "durationSeconds": 12,
+            "error": null,
+            "aborted": false,
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "hairline-limit",
+                "type": "regex",
+                "passed": true,
+                "scored": true,
+                "judgeVotes": null
+              },
+              {
+                "name": "skill-fired",
+                "type": "tool_used",
+                "passed": false,
+                "scored": false,
+                "judgeVotes": null
+              },
+              {
+                "name": "text-limit",
+                "type": "regex",
+                "passed": true,
+                "scored": true,
+                "judgeVotes": null
+              },
+              {
+                "name": "verdict",
+                "type": "llm",
+                "passed": true,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ]
+              }
+            ]
+          }
+        ],
+        "without": [
+          {
+            "score": 0.3333333333333333,
+            "passed": false,
+            "turns": 1,
+            "costUsd": 0.00199432,
+            "judgeCostUsd": 0.0007314999999999999,
+            "durationSeconds": 13,
+            "error": null,
+            "aborted": false,
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "hairline-limit",
+                "type": "regex",
+                "passed": false,
+                "scored": true,
+                "judgeVotes": null
+              },
+              {
+                "name": "text-limit",
+                "type": "regex",
+                "passed": true,
+                "scored": true,
+                "judgeVotes": null
+              },
+              {
+                "name": "verdict",
+                "type": "llm",
+                "passed": false,
+                "scored": true,
+                "judgeVotes": [
+                  false,
+                  false,
+                  false
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "sheet-review-neg-r45",
+      "dir": "evals/plugin-eval/sheet-review/sheet-review-neg-r45",
+      "maxTurns": 4,
+      "aggregates": {
+        "score": 1,
+        "passRate": 1,
+        "scoreWithout": 1,
+        "passRateWithout": 1,
+        "delta": 0
+      },
+      "arms": {
+        "with": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 5,
+            "costUsd": 0.0023012199999999997,
+            "judgeCostUsd": 0,
+            "durationSeconds": 6,
+            "error": "exit 1: Reached maximum number of turns (4)",
+            "aborted": false,
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "skill-not-fired",
+                "type": "tool_used",
+                "passed": true,
+                "scored": true,
+                "judgeVotes": null
+              }
+            ]
+          }
+        ],
+        "without": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 5,
+            "costUsd": 0.00164496,
+            "judgeCostUsd": 0,
+            "durationSeconds": 6,
+            "error": null,
+            "aborted": false,
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "skill-not-fired",
+                "type": "tool_used",
+                "passed": true,
+                "scored": true,
+                "judgeVotes": null
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "sheet-review-pos-r01",
+      "dir": "evals/plugin-eval/sheet-review/sheet-review-pos-r01",
+      "maxTurns": 4,
+      "aggregates": {
+        "score": 1,
+        "passRate": 1,
+        "scoreWithout": 0,
+        "passRateWithout": 0,
+        "delta": 1
+      },
+      "arms": {
+        "with": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 5,
+            "costUsd": 0.0029022300000000004,
+            "judgeCostUsd": 0,
+            "durationSeconds": 6,
+            "error": "exit 1: Reached maximum number of turns (4)",
+            "aborted": false,
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "skill-fired",
+                "type": "tool_used",
+                "passed": true,
+                "scored": true,
+                "judgeVotes": null
+              }
+            ]
+          }
+        ],
+        "without": [
+          {
+            "score": 0,
+            "passed": false,
+            "turns": 4,
+            "costUsd": 0.00142642,
+            "judgeCostUsd": 0,
+            "durationSeconds": 5,
+            "error": null,
+            "aborted": false,
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "skill-fired",
+                "type": "tool_used",
+                "passed": false,
+                "scored": true,
+                "judgeVotes": null
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
