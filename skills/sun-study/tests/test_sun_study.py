@@ -156,6 +156,41 @@ def test_off_layer_objects_skipped_unless_requested(tmp_path):
     assert mesh is not None and stats.objects_meshed == 1
 
 
+def write_block_3dm(path: Path):
+    """One visible block instance whose only member is a box on an off layer."""
+    model = rhino3dm.File3dm()
+    model.Settings.ModelUnitSystem = rhino3dm.UnitSystem.Meters
+    for name, visible in (("Visible", True), ("Off", False)):
+        layer = rhino3dm.Layer()
+        layer.Name = name
+        layer.Visible = visible
+        model.Layers.Add(layer)
+    box = trimesh.creation.box()
+    mesh = rhino3dm.Mesh()
+    for x, y, z in box.vertices:
+        mesh.Vertices.Add(float(x), float(y), float(z))
+    for a, b, c in box.faces:
+        mesh.Faces.AddFace(int(a), int(b), int(c))
+    member = rhino3dm.ObjectAttributes()
+    member.LayerIndex = 1
+    index = model.InstanceDefinitions.Add("Block", "", "", "", rhino3dm.Point3d(0, 0, 0), (mesh,), (member,))
+    instance = rhino3dm.InstanceReference(model.InstanceDefinitions[index].Id, rhino3dm.Transform.Identity())
+    attributes = rhino3dm.ObjectAttributes()
+    attributes.LayerIndex = 0
+    model.Objects.AddInstanceObject(instance, attributes)
+    assert model.Write(str(path), 8)
+
+
+def test_skl08_off_layer_block_members_cast_no_shade(tmp_path):
+    path = tmp_path / "block_off_layer.3dm"
+    write_block_3dm(path)
+    mesh, stats, _ = sun_study.load_context(path, None, None)
+    assert mesh is None, "a block member on an off layer must not cast shade"
+    assert stats.block_instances == 1 and stats.objects_off_layer_skipped == 1 and stats.warnings
+    mesh, stats, _ = sun_study.load_context(path, None, None, include_off_layers=True)
+    assert mesh is not None and len(mesh.faces) == 12
+
+
 def test_grid_from_layer_closed_curve(tmp_path):
     path = tmp_path / "grid_layer.3dm"
     write_mm_box_3dm(path)

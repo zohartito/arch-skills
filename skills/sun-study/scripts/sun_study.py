@@ -253,8 +253,15 @@ def load_3dm(path: Path, layer_filters: list[str] | None, stats: GeometryStats,
             any_added = False
             for member_id in definition.GetObjectIds():
                 member = objects_by_id.get(str(member_id))
-                if member is not None:
-                    any_added |= add_geometry(member.Geometry, combined, depth + 1)
+                if member is None:
+                    continue
+                # Rhino does not draw block members on an off layer; match it (SKL-08).
+                member_layer = member.Attributes.LayerIndex
+                if (0 <= member_layer < len(paths) and not on_flags[member_layer]
+                        and not include_off_layers):
+                    stats.objects_off_layer_skipped += 1
+                    continue
+                any_added |= add_geometry(member.Geometry, combined, depth + 1)
             return any_added
         meshes = geometry_meshes(geometry)
         if not meshes:
