@@ -61,6 +61,9 @@ def collect(sources: list[Path]) -> tuple[list[tuple[Path, Path]], list[Path]]:
     """(source file, path relative to dest) pairs, plus the skipped source files."""
     pairs, skipped = [], []
     for source in sources:
+        if is_skipped(source.absolute()):
+            skipped.append(source)
+            continue
         if source.is_dir():
             for path in sorted(source.rglob("*")):
                 if not path.is_file():

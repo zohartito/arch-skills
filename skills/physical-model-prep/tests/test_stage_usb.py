@@ -40,3 +40,21 @@ def test_copy_failure_preserves_existing_destination(tmp_path, monkeypatch):
         stage_usb.copy_synced(source, target)
     assert target.read_bytes() == b"old bytes"
     assert source.read_bytes() == b"new bytes"
+
+
+@pytest.mark.parametrize("selection", ["file", "folder", "glob", "ancestor"])
+def test_superseded_sources_are_skipped(tmp_path, monkeypatch, selection):
+    project = tmp_path / "project"
+    old = project / "_superseded-v1" / "nested" / "old.dxf"
+    old.parent.mkdir(parents=True)
+    old.write_bytes(b"old version")
+    current = project / "current.dxf"
+    current.write_bytes(b"current version")
+    sources = {"file": [old], "folder": [old.parent.parent],
+               "glob": sorted(project.glob("*")), "ancestor": [old.parent]}[selection]
+    dest = tmp_path / "usb"
+    assert stage(monkeypatch, sources, dest) == (0 if selection == "glob" else 2)
+    assert not list(dest.rglob("old.dxf"))
+    assert old.read_bytes() == b"old version"
+    if selection == "glob":
+        assert (dest / "current.dxf").read_bytes() == b"current version"
