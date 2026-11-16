@@ -21,9 +21,9 @@ Developed and used on macOS with Python 3.11. Windows and Linux are untested (se
 git clone https://github.com/zohartito/arch-skills.git
 cd arch-skills
 
-# Python environment for the scripts
-python3 -m venv .venv
-.venv/bin/pip install -r requirements-arch-tools.txt
+# Python environment for the scripts (locked target: CPython 3.11, macOS arm64)
+python3.11 -m venv .venv
+.venv/bin/pip install --require-hashes -r requirements-arch-tools.txt
 
 # Claude Code: link the skills you want into your user (or a project's .claude/) skills folder
 mkdir -p ~/.claude/skills
@@ -36,6 +36,12 @@ for s in skills/*/; do ln -s "$PWD/$s" ~/.codex/skills/"$(basename "$s")"; done
 
 Start a new agent session after linking. The SKILL.md files refer to "a Python with `requirements-arch-tools.txt`
 installed"; that is `.venv/bin/python` above. Script paths in the SKILL.md files are relative to each skill's folder.
+
+`requirements-arch-tools.txt` locks all 34 direct and transitive distributions to exact versions and wheel
+SHA-256 hashes, and enables pip's required-hash mode itself. The lock targets CPython 3.11 on macOS arm64;
+other Python/platform combinations need a separately generated and reviewed lock. To refresh it, resolve in a
+clean environment for that target, download the complete pinned wheel set, record each wheel's SHA-256, and
+rerun the offline tests. Review transitive changes as well as direct pins; do not bypass hash verification.
 
 To turn on the Rhino guard hook for one project, add this to that project's `.claude/settings.json`:
 
@@ -62,11 +68,11 @@ in each SKILL.md lists the phrases).
 | Skill | What it does | Needs |
 |---|---|---|
 | `sheet-review` | Preflight of an exported sheet PDF (size, fonts, image PPI, small/placeholder text, hairlines, off-palette and legend-only colours, diff against the previous export), tile images for a visual pass, optional read-only InDesign audit | PyMuPDF; for the audit, InDesign + an `execute_extend_script` tool that is not in upstream adb-mcp yet (see Limits) |
-| `rhino-safe-capture` | Rules for capturing from Rhino without changing the user's open document, plus a hook that blocks mutating Rhino MCP calls | Rhino 8 with the `rhino-mcneel` or `rhino-community` MCP server; Claude Code for the hook |
+| `rhino-safe-capture` | Rules for capturing from Rhino without changing the user's open document, plus a partial regex hook that blocks recognized mutating Rhino MCP calls | Rhino 8 with the `rhino-mcneel` or `rhino-community` MCP server; Claude Code for the hook |
 | `physical-model-prep` | Fabrication rules, laser layer conventions, starting laser settings (ULS PLS6.150D), fit clearances, mesh checks, verified USB staging | rhino3dm, trimesh |
 | `bambu-print-recipes` | Bambu Studio settings and orientation for model parts (roofs, fins, railings, screens, furniture, figures), keeping supports off delicate parts | Bambu Studio; no scripts |
 | `stl-fit-and-repair` | Pull parts from a saved .3dm, weld to one body, thicken thin parts, repair downloads, fit a new part to already-printed ones, render views | trimesh, manifold3d, pymeshfix, scipy, scikit-image |
-| `printables-entourage` | Search and download printable people, pets, cars and plants from Printables, scale them to the model, repair, lay out one plate, keep a licence ledger | network access to printables.com; `stl-fit-and-repair` |
+| `printables-entourage` | Search and download printable people, pets, cars and plants from Printables, scale them to the model, repair, combine into an unbounded row STL, keep a licence ledger | network access to printables.com; `stl-fit-and-repair` |
 | `model-assembly-sheet` | 1:1 placement PDF for gluing pieces onto a base, with post holes and brass cut lengths | trimesh, matplotlib |
 | `sun-study` | Sun positions and direct-sun hours on a grid through context geometry, headless (no Rhino GUI) | ladybug-core, trimesh (+ embreex), rhino3dm |
 | `precedent-dossier` | Folder layout, source ledger and citation rules for precedent research, with a ledger validator | Python standard library |
@@ -131,11 +137,14 @@ python3 scripts/check_ledger.py path/to/dossier
 - `stage_usb.py` was written for macOS (`/Volumes`, and `F_NOCACHE` so the re-read comes from the stick, not the
   page cache). It imports `fcntl`, so it does not run on Windows; Linux is untested.
 - `printables.py` uses the GraphQL API that the printables.com pages call. It is unofficial and may change or stop
-  working. Check each model's licence before you use it.
+  working. Downloads and redirects are restricted to HTTPS `media.printables.com` on port 443 with public
+  destination addresses; a different CDN host is refused until reviewed. Check each model's licence before you use it.
 - `sun-study` computes direct sun only: no diffuse light, radiation, or daylight metrics. Its one built-in site
   preset is `los-angeles-ca`; use `--lat/--lon/--tz` or `--epw` for anywhere else.
 - `rhino-safe-capture`'s hook cannot tell a slot the agent spawned from one it adopted, and it does not cover the
-  community server's single-object tools. The SKILL.md says so.
+  community server's single-object tools. Its regex checks miss aliases, direct imports and indirect calls;
+  an allow response does not prove a script is read-only. Review arbitrary scripts and use a spawned slot
+  or saved-file analysis whenever read-only behavior is uncertain. The SKILL.md describes these limits.
 - `bambu-print-recipes` uses Bambu Studio 2.x labels and the macOS preset folder.
 
 ## License

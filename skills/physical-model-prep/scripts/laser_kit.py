@@ -2,7 +2,7 @@
 """Laser .3dm helpers (rhino3dm, inches, true size, colour by layer). Library + CLI.
 
   laser_kit.py square-holes SRC.3dm --post 2.0 --burn 0.25 --out OUT.3dm [--max-hole 6] [--angle DEG]
-      replace every small closed CUT curve (round post holes) with a square sized post - 2 x burn, same centre
+      replace every small closed circular CUT curve with a square sized post - 2 x burn, same centre
   laser_kit.py test-strip OUT.3dm --sizes 1.3 1.4 1.5 1.6 1.7 1.8
       strip of square test holes, n scored ticks above hole n (cut it with the SAME settings as the real part)
 
@@ -74,7 +74,8 @@ def cmd_square_holes(args):
     for o in src.Objects:
         bb = o.Geometry.GetBoundingBox()
         small = (bb.Max.X - bb.Min.X) < limit and (bb.Max.Y - bb.Min.Y) < limit
-        if o.Attributes.LayerIndex == cut and small:
+        circular = isinstance(o.Geometry, rhino3dm.Curve) and o.Geometry.IsClosed and o.Geometry.IsCircle()
+        if o.Attributes.LayerIndex == cut and small and circular:
             centres.append(((bb.Min.X + bb.Max.X) / 2, (bb.Min.Y + bb.Max.Y) / 2))
             continue
         attrs = rhino3dm.ObjectAttributes()
@@ -111,7 +112,7 @@ def main(argv=None) -> int:
     p.add_argument("src"); p.add_argument("--out", required=True)
     p.add_argument("--post", type=float, default=2.0, help="post side, mm")
     p.add_argument("--burn", type=float, default=0.25, help="laser burn per side, mm")
-    p.add_argument("--max-hole", type=float, default=6.0, help="mm; CUT curves smaller than this are holes")
+    p.add_argument("--max-hole", type=float, default=6.0, help="mm; only closed circular CUT curves smaller than this are holes")
     p.add_argument("--angle", type=float, default=0.0, help="square rotation, deg (match the post's plan angle)")
     p = sub.add_parser("test-strip")
     p.add_argument("out"); p.add_argument("--sizes", type=float, nargs="+", default=[1.3, 1.4, 1.5, 1.6, 1.7, 1.8])

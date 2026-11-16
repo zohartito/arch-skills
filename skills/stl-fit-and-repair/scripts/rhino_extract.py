@@ -77,7 +77,7 @@ def _rhino_mesh(rm, mmft):
 
 
 def _brep_points(geometry):
-    brep = geometry.ToBrep() if isinstance(geometry, rhino3dm.Extrusion) else geometry
+    brep = geometry.ToBrep(False) if isinstance(geometry, rhino3dm.Extrusion) else geometry
     if not isinstance(brep, rhino3dm.Brep):
         return None
     pts = [(v.Location.X, v.Location.Y, v.Location.Z) for v in brep.Vertices]
