@@ -9,10 +9,9 @@
 import argparse
 import json
 from pathlib import Path
-import re
 import sys
 
-from eval_common import ROOT
+from eval_common import ROOT, scrub_paths as scrub
 from run_triggers import load_rows
 
 SUITE = ROOT / "evals/plugin-eval"
@@ -145,13 +144,6 @@ def check(suite=SUITE):
     for relative in extra:
         print(f"not generated (remove by hand): {relative}")
     return 1 if stale or extra else 0
-
-
-PATH_PATTERN = re.compile(r"(?:/Users|/home|/private|/tmp|/var)/\S*")
-
-
-def scrub(text):
-    return PATH_PATTERN.sub("<path>", text) if isinstance(text, str) else text
 
 
 def redact(result):

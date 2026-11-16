@@ -10,8 +10,9 @@ from pathlib import Path
 import re
 import sys
 
+from eval_common import scrub_paths
+
 SEVERITY_ORDER = ("critical", "high", "medium", "low", "info")
-ABSOLUTE = re.compile(r"(?:/Users|/home|/private|/tmp|/var)/\S*")
 
 
 def relative(path):
@@ -20,7 +21,7 @@ def relative(path):
     parts = Path(path).parts
     if "skills" in parts:
         return "/".join(parts[len(parts) - parts[::-1].index("skills"):])
-    return ABSOLUTE.sub("<path>", path)
+    return scrub_paths(path)
 
 
 def findings(report):
@@ -28,7 +29,7 @@ def findings(report):
     for group in report.get("finding_groups") or []:
         occurrences = group.get("occurrences") or [{}]
         rows.append({"severity": group.get("severity"), "category": group.get("category"),
-                     "check": group.get("check_name"), "message": ABSOLUTE.sub("<path>", group.get("message") or ""),
+                     "check": group.get("check_name"), "message": scrub_paths(group.get("message") or ""),
                      "file": relative(occurrences[0].get("file_path")), "line": occurrences[0].get("line_number"),
                      "occurrences": group.get("occurrence_count", len(occurrences))})
     rows.sort(key=lambda r: SEVERITY_ORDER.index(r["severity"]) if r["severity"] in SEVERITY_ORDER else 99)

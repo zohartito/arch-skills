@@ -10,6 +10,7 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+import eval_common
 import plugin_eval
 import summarize_skillevaluator as skilleval
 
@@ -26,6 +27,68 @@ def frontmatter(text):
 
 def cases(files):
     return sorted({Path(relative).parent for relative in files if relative.endswith("prompt.md")})
+
+
+PATH_CASES = [
+    ("/workspace/private-project/report.pdf", "<path>"),
+    ("/root/a", "<path>"),
+    ("/home/u/b", "<path>"),
+    ("/Users/u/c", "<path>"),
+    ("/private/tmp/eval/report.json", "<path>"),
+    ("/var/folders/xx/report.json", "<path>"),
+    (r"C:\Users\u\x", "<path>"),
+    ("D:/data/x", "<path>"),
+    (r"\\server\share\x", "<path>"),
+    ("~/private/report.pdf", "<path>"),
+    ("/abs/arch-skills/skills/sun-study/SKILL.md", "<repo>/skills/sun-study/SKILL.md"),
+    (f"/abs/{eval_common.ROOT.name}/evals/report.json", "<repo>/evals/report.json"),
+    (r"C:\work\arch-skills\skills\sun-study\SKILL.md", "<repo>/skills/sun-study/SKILL.md"),
+    (r"\\server\share\arch-skills\evals\report.json", "<repo>/evals/report.json"),
+    ("~/arch-skills/evals/report.json", "<repo>/evals/report.json"),
+    ("/abs/not-arch-skills/report.pdf", "<path>"),
+    ("/abs/arch-skills", "<path>"),
+]
+UNCHANGED_TEXT = [
+    "https://github.com/zohartito/arch-skills",
+    "https://example.com/report?next=/workspace/private/report.pdf",
+    "skills/sun-study/SKILL.md",
+    "./skills/sun-study/SKILL.md",
+    "../skills/sun-study/SKILL.md",
+    "1/2", "2026/11/15", "and/or", "a /b",
+    "prefix/workspace/private/report.pdf",
+    "prefix~/private/report.pdf",
+    r"prefixC:\Users\u\x",
+    r"folder\C:\Users\u\x",
+]
+
+
+class PathScrubTests(unittest.TestCase):
+    def test_shared_scrubber_handles_absolute_path_formats(self):
+        for path, expected in PATH_CASES:
+            with self.subTest(path=path):
+                self.assertEqual(eval_common.scrub_paths(path), expected)
+
+    def test_preserves_non_path_text(self):
+        for text in UNCHANGED_TEXT:
+            with self.subTest(text=text):
+                self.assertEqual(eval_common.scrub_paths(text), text)
+
+    def test_token_boundaries_and_trailing_punctuation(self):
+        for path, expected in PATH_CASES:
+            for before, after in [("failed to open ", "."), ('file="', '", retry'),
+                                  ("(", ")"), ("[", "]"), ("file:", "; retry"), ("`", "`")]:
+                with self.subTest(path=path, before=before, after=after):
+                    self.assertEqual(eval_common.scrub_paths(before + path + after), before + expected + after)
+
+    def test_scrubs_multiple_paths_without_changing_a_url(self):
+        text = r"Compare /workspace/private/report.pdf, C:\data\report.pdf and https://example.com/a/b."
+        self.assertEqual(eval_common.scrub_paths(text),
+                         "Compare <path>, <path> and https://example.com/a/b.")
+
+    def test_non_strings_are_returned_unchanged(self):
+        for value in (None, 0, False, [], {}, Path("/workspace/private/report.pdf")):
+            with self.subTest(value=value):
+                self.assertIs(eval_common.scrub_paths(value), value)
 
 
 class SuiteTests(unittest.TestCase):
@@ -131,6 +194,18 @@ AGGREGATE = {
 
 
 class SummaryTests(unittest.TestCase):
+    def test_error_paths_are_scrubbed_in_json_and_markdown(self):
+        for path, expected in PATH_CASES:
+            with self.subTest(path=path):
+                error = f"failed to open {path}."
+                clean_error = f"failed to open {expected}."
+                self.assertEqual(plugin_eval.scrub(error), clean_error)
+                source = {"cases": [{"name": "error-case", "arms": {"with": [{"error": error}]}}]}
+                redacted = plugin_eval.redact(source)
+                self.assertEqual(redacted["cases"][0]["arms"]["with"][0]["error"], clean_error)
+                self.assertNotIn(path, json.dumps(redacted))
+                self.assertIn(clean_error, plugin_eval.summary_markdown(redacted, "offline"))
+
     def test_redact_drops_text_and_paths(self):
         redacted = plugin_eval.redact(AGGREGATE)
         dumped = json.dumps(redacted)
@@ -178,6 +253,33 @@ SIMILARITY = {"overall_status": "incomplete", "incomplete_scans": ["collection-c
 
 
 class SkillEvaluatorSummaryTests(unittest.TestCase):
+    def test_finding_messages_and_fallback_files_use_shared_path_scrubbing(self):
+        for path, expected in PATH_CASES:
+            with self.subTest(path=path):
+                report = {**TIER1, "finding_groups": [
+                    {"severity": "high", "check_name": "file_error", "message": f"failed to open {path}.",
+                     "occurrences": [{"file_path": path}]},
+                ]}
+                summary = skilleval.tier1_summary(report)
+                finding = summary["findings"][0]
+                self.assertEqual(finding["message"], f"failed to open {expected}.")
+                # Preserve relative()'s existing native-path behavior: start after the last skills/ component.
+                expected_file = "sun-study/SKILL.md" if "skills" in Path(path).parts else expected
+                self.assertEqual(finding["file"], expected_file)
+                self.assertIn(f"failed to open {expected}.", skilleval.markdown([summary], [], "offline"))
+
+    def test_relative_keeps_existing_skills_behavior(self):
+        for path in ("/abs/arch-skills/skills/sun-study/SKILL.md", "skills/sun-study/SKILL.md",
+                     "/abs/skills/nested/skills/sun-study/SKILL.md"):
+            with self.subTest(path=path):
+                self.assertEqual(skilleval.relative(path), "sun-study/SKILL.md")
+
+    def test_finding_messages_preserve_non_path_text(self):
+        for text in UNCHANGED_TEXT:
+            with self.subTest(text=text):
+                rows = skilleval.findings({"finding_groups": [{"message": text}]})
+                self.assertEqual(rows[0]["message"], text)
+
     def test_tier1_summary_sorts_by_severity_and_strips_paths(self):
         summary = skilleval.tier1_summary(TIER1)
         self.assertEqual(summary["findings"][0]["check"], "yaml_syntax")
