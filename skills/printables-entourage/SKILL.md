@@ -48,7 +48,7 @@ have the screen".
    - `cut_base=1` removes round display bases. The cut sits 0.2 mm above the base rim; check the feet in the render.
    - `grow_mm`: leaves are paper-thin once scaled (about 0.2 mm at 1/8"). Use 0.12 at 1/4" and 0.14 at 1/8". A
      palm made of flat card-like parts and a detailed agave were still too thin, so they were dropped.
-   - Cars that are open render meshes inside the Rhino model: pull them with `stl-fit-and-repair/rhino_extract.py`
+   - Cars that are open render meshes inside the Rhino model: pull them with `stl-fit-and-repair/scripts/rhino_extract.py`
      and fuse them with `meshkit.py solidify` (the Ford Focus).
 4. **Check and show.** Every item must report `bodies 1, bad edges 0`. Render the plate
    (`stl-fit-and-repair/scripts/render_views.py plate.stl --out plate.png`) and look before sending. Without the
