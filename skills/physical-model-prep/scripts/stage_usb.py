@@ -21,6 +21,7 @@ import fcntl
 import hashlib
 import os
 import sys
+import tempfile
 from pathlib import Path
 
 MANIFEST_NAME = "MANIFEST-SHA256.txt"
@@ -88,13 +89,22 @@ def fsync_dir(directory: Path) -> None:
 
 
 def copy_synced(source: Path, target: Path) -> None:
+    if target.exists() and source.samefile(target):
+        raise ValueError("source and destination are the same file")
     target.parent.mkdir(parents=True, exist_ok=True)
-    with source.open("rb") as reader, target.open("wb") as writer:
-        while block := reader.read(CHUNK):
-            writer.write(block)
-        writer.flush()
-        os.fsync(writer.fileno())
-    os.utime(target, ns=(source.stat().st_atime_ns, source.stat().st_mtime_ns))
+    temporary = None
+    try:
+        with source.open("rb") as reader, tempfile.NamedTemporaryFile(dir=target.parent, delete=False) as writer:
+            temporary = Path(writer.name)
+            while block := reader.read(CHUNK):
+                writer.write(block)
+            writer.flush()
+            os.fsync(writer.fileno())
+        os.utime(temporary, ns=(source.stat().st_atime_ns, source.stat().st_mtime_ns))
+        os.replace(temporary, target)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
     fsync_dir(target.parent)
 
 
@@ -127,6 +137,9 @@ def main() -> int:
         print(f"REFUSED: two sources map to the same name: {sorted(duplicates)}", file=sys.stderr)
         return 2
 
+    if any((dest / r).exists() and path.samefile(dest / r) for path, r in pairs):
+        print("REFUSED: source and destination are the same file", file=sys.stderr)
+        return 2
     source_hashes = {relative: sha256_of(path) for path, relative in pairs}
     conflicts = [r for _, r in pairs if (dest / r).exists() and sha256_of(dest / r) != source_hashes[r]]
     if conflicts and not args.overwrite:
