@@ -7,7 +7,7 @@ import csv
 from pathlib import Path
 import sys
 
-from eval_common import NAMESPACE, ROOT, SKILLS, public_skill
+from eval_common import NAMESPACE, SKILLS, public_skill
 from run_triggers import INPUT, load_rows
 
 
@@ -57,16 +57,11 @@ def verdict(metrics, complete):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("results", type=Path, nargs="?")
+    parser.add_argument("results", type=Path, help="explicit result CSV to score (never selected by file mtime)")
     parser.add_argument("--input", type=Path, default=INPUT)
     args = parser.parse_args(argv)
     try:
         path = args.results
-        if path is None:
-            candidates = list((ROOT / "evals/results").glob("triggers-*.csv"))
-            if not candidates:
-                raise ValueError("No trigger result CSV found.")
-            path = max(candidates, key=lambda p: p.stat().st_mtime_ns)
         expected = load_rows(args.input)
         rows = read_results(path, expected)
         metrics = score(rows)

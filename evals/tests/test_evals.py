@@ -238,6 +238,13 @@ class ScoreTests(unittest.TestCase):
     def test_complete_pass(self):
         self.assertEqual(0, check_triggers.verdict(check_triggers.score(self.rows), True))
 
+    def test_checker_requires_explicit_result_path(self):
+        with patch("check_triggers.read_results", side_effect=AssertionError("must not select by mtime")):
+            with contextlib.redirect_stderr(io.StringIO()) as err, self.assertRaises(SystemExit) as exc:
+                check_triggers.main([])
+        self.assertEqual(2, exc.exception.code)
+        self.assertIn("results", err.getvalue())
+
     def test_recall_boundary_and_failure(self):
         positives = [r for r in self.rows if r["skill"] == "sheet-review" and r["should_trigger"] == "1"]
         positives[0]["first_skill"] = ""
