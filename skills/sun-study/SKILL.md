@@ -29,7 +29,7 @@ Tests (from this skill's folder): `$PY -m pytest tests -q`
 ## Inputs
 - **Location**: pick one of `--site los-angeles-ca` (34.052, -118.244, UTC-8), `--epw file.epw` (only its location is used), or `--lat --lon --tz`. `--tz` is the **standard-time** offset. There is no DST, so clock times are local standard time (PDT 13:00 = 12:00 here).
 - **North**: `--north DEG` uses the Ladybug convention, north rotated counter-clockwise from +Y. The default 0 means +Y is north.
-- **Period**: `--date MM-DD`, or `--start MM-DD --end MM-DD` (inclusive; a range like 11-01 to 02-28 wraps across New Year). `--hours 8-16` is a clock window and defaults to 0-24. `--step-min` defaults to 15. Each timestep is the **midpoint** of its interval. Sun below the horizon is skipped.
+- **Period**: `--date MM-DD`, or `--start MM-DD --end MM-DD` (inclusive; a range like 11-01 to 02-28 wraps across New Year). `--hours 8-16` is a clock window and defaults to 0-24. `--step-min` defaults to 15 and must divide that window exactly (otherwise the command refuses the input). Each timestep is the **midpoint** of its interval. Sun below the horizon is skipped.
 - **Geometry**:
   - `.3dm` uses the render meshes Rhino stored for Breps, Extrusions and Meshes. Block instances are expanded with their transforms.
   - Hidden objects and objects on layers saved as off are skipped by default; `--include-off-layers` adds the off layers.

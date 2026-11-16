@@ -39,6 +39,18 @@ def test_sun_vector_points_at_sun():
     assert sample.vector[1] < 0  # winter noon sun is due south (-Y)
 
 
+@pytest.mark.parametrize("start,end,step", [(8, 16, 70), (9, 16, 45), (8, 16, 600)])
+def test_nondividing_timestep_is_rejected(start, end, step):
+    with pytest.raises(SystemExit, match="divide"):
+        sun_study.timestep_hours(start, end, step)
+
+
+def test_dividing_timestep_covers_exact_window():
+    hours = sun_study.timestep_hours(8, 16, 15)
+    assert len(hours) * 15 / 60 == 8
+    assert hours[0] == 8.125 and hours[-1] == 15.875
+
+
 def east_west_wall(height, length=200.0, thickness=0.2):
     """Wall along X, centred on y=0, standing on z=0."""
     wall = trimesh.creation.box(extents=(length, thickness, height))

@@ -90,8 +90,13 @@ def parse_hours(text: str) -> tuple[float, float]:
 
 def timestep_hours(hour_start: float, hour_end: float, step_min: float) -> list[float]:
     """Midpoints of step-length intervals covering [hour_start, hour_end)."""
+    if not np.isfinite(step_min) or step_min <= 0:
+        raise SystemExit("--step-min must be positive and divide the selected hours window")
     step_h = step_min / 60.0
-    count = int(round((hour_end - hour_start) / step_h))
+    intervals = (hour_end - hour_start) / step_h
+    count = int(round(intervals))
+    if count < 1 or not np.isclose(intervals, count, rtol=0, atol=1e-9):
+        raise SystemExit("--step-min must divide the selected hours window exactly")
     return [hour_start + (index + 0.5) * step_h for index in range(count)]
 
 
@@ -502,7 +507,7 @@ def build_parser() -> argparse.ArgumentParser:
     period.add_argument("--start", help="first day MM-DD")
     period.add_argument("--end", help="last day MM-DD (inclusive)")
     period.add_argument("--hours", default="0-24", help="clock-hour window, e.g. 8-16")
-    period.add_argument("--step-min", type=float, default=15.0)
+    period.add_argument("--step-min", type=float, default=15.0, help="minutes; must divide the hours window exactly")
     parser.add_argument("--sunpath-only", action="store_true",
                         help="print sun altitude/azimuth table and exit")
     geometry = parser.add_argument_group("context geometry")
