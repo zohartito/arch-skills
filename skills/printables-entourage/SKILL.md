@@ -37,6 +37,8 @@ have the screen".
    files, with a ledger row (file, model, author, licence, source URL) that you can cite on the board.
 3. **Prepare at true scale.** Write a `spec.csv` (columns documented in `prep_entourage.py`), then:
    `prep_entourage.py spec.csv --src downloads --mmft 6.35 --out prepped/1-4in --plate pets-plate_1-4in.stl`
+   CSV names must be basenames; input files must stay beneath `--src`, without traversal or symlinks.
+   Existing outputs are refused: choose a new `--out` folder and `--plate` filename when rerunning.
    `--plate` writes one combined STL in a single row with gaps. It does not pack a usable bed or check
    bed dimensions: split into objects in the slicer, auto-arrange, and split across plates as needed.
    - Real sizes used: person 5.5–6 ft; cat 0.95 ft sitting height, 1.6 ft long lying, 1.2 ft curled; Labrador
