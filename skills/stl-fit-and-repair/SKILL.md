@@ -34,8 +34,9 @@ Focus, scanned 1:50 people. Scripts are in `scripts/`; run them with a Python th
 4. **Fit to what was actually printed.**
    `scripts/fit_to_mates.py NEW.stl --mates PRINTED.stl [...] --placements placements.json --clear 0.15 --out NEW-FIT.stl`
    Use the STL files that went to the printer as mates, not a newer regeneration. It subtracts the mates grown by the
-   clearance, drops crumbs, exports, and checks overlap = 0, drop-on path clear (raised 0.05–30 mm), one body,
-   watertight. Exit 0 = PASS. Re-run on the project's pair-A roof: 0.0005 mm³ overlap, path clear, 1 body.
+   clearance, drops crumbs, exports, and checks seated overlap and continuous swept-volume overlap from
+   0–30 mm raised (each <0.01 mm³), one body, watertight. Exit 0 = PASS for that 30 mm travel window.
+   The earlier pair-A roof result (0.0005 mm³ overlap, 1 body) used six sampled heights, not this continuous check.
    `placements.json` maps each file stem to the [x, y, z] shift that moved it from model frame to print frame:
    write it whenever a generator re-centres parts onto the bed, or later fits are guesswork.
 
