@@ -101,17 +101,30 @@ def cmd_sheet(args):
 def cmd_fetch(args):
     m = model(args.model_id)
     out = Path(args.out)
+    if any(p.is_symlink() for p in (out, *out.parents)):
+        raise ValueError("download directory must not contain a symlink")
     out.mkdir(parents=True, exist_ok=True)
     files = sorted(m["stls"] or [], key=lambda s: s["name"])
     if args.match:
         files = [s for s in files if args.match.lower() in s["name"].lower()]
     files = files[::args.every][:args.max]
     for s in files:
-        dest = out / s["name"]
+        name = s["name"]
+        if not name or name in (".", "..") or any(c in name for c in "/\\:\0\r\n"):
+            raise ValueError("download filename must be a safe basename")
+        dest = out / name
+        if dest.is_symlink():
+            raise ValueError("download filename must not be a symlink")
+        if dest.resolve().parent != out.resolve():
+            raise ValueError("download filename escapes the output directory")
         if dest.exists():
+            if not dest.is_file():
+                raise ValueError("download filename is not a regular file")
             print("have", dest.name)
             continue
-        dest.write_bytes(fetch_bytes(download_link(args.model_id, s["id"])))
+        data = fetch_bytes(download_link(args.model_id, s["id"]))
+        with dest.open("xb") as handle:
+            handle.write(data)
         print("got", dest.name, f"{dest.stat().st_size / 1e6:.1f} MB")
     if args.ledger:
         ledger = Path(args.ledger)
