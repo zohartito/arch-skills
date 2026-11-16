@@ -21,9 +21,9 @@ Developed and used on macOS with Python 3.11. Windows and Linux are untested (se
 git clone https://github.com/zohartito/arch-skills.git
 cd arch-skills
 
-# Python environment for the scripts
-python3 -m venv .venv
-.venv/bin/pip install -r requirements-arch-tools.txt
+# Python environment for the scripts (locked target: CPython 3.11, macOS arm64)
+python3.11 -m venv .venv
+.venv/bin/pip install --require-hashes -r requirements-arch-tools.txt
 
 # Claude Code: link the skills you want into your user (or a project's .claude/) skills folder
 mkdir -p ~/.claude/skills
@@ -36,6 +36,12 @@ for s in skills/*/; do ln -s "$PWD/$s" ~/.codex/skills/"$(basename "$s")"; done
 
 Start a new agent session after linking. The SKILL.md files refer to "a Python with `requirements-arch-tools.txt`
 installed"; that is `.venv/bin/python` above. Script paths in the SKILL.md files are relative to each skill's folder.
+
+`requirements-arch-tools.txt` locks all 34 direct and transitive distributions to exact versions and wheel
+SHA-256 hashes, and enables pip's required-hash mode itself. The lock targets CPython 3.11 on macOS arm64;
+other Python/platform combinations need a separately generated and reviewed lock. To refresh it, resolve in a
+clean environment for that target, download the complete pinned wheel set, record each wheel's SHA-256, and
+rerun the offline tests. Review transitive changes as well as direct pins; do not bypass hash verification.
 
 To turn on the Rhino guard hook for one project, add this to that project's `.claude/settings.json`:
 
