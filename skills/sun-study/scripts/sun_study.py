@@ -255,7 +255,10 @@ def load_3dm(path: Path, layer_filters: list[str] | None, stats: GeometryStats,
                 member = objects_by_id.get(str(member_id))
                 if member is None:
                     continue
-                # Rhino does not draw block members on an off layer; match it (SKL-08).
+                # Respect saved visibility at every block depth (SKL-08).
+                if not member.Attributes.Visible:
+                    stats.objects_hidden_skipped += 1
+                    continue
                 member_layer = member.Attributes.LayerIndex
                 if (0 <= member_layer < len(paths) and not on_flags[member_layer]
                         and not include_off_layers):
