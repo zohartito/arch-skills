@@ -1,0 +1,10 @@
+{
+  "name": "arch-skills",
+  "description": "Agent skills for architecture-student production work: sheet preflight, sun studies, physical model prep, Bambu print recipes and precedent research.",
+  "author": { "name": "Zohar Tito" },
+  "license": "MIT",
+  "repository": "https://github.com/zohartito/arch-skills",
+  "experimental": {
+    "evals": "evals/plugin-eval"
+  }
+}
