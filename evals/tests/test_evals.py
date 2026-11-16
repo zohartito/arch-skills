@@ -109,6 +109,22 @@ class ParserTests(unittest.TestCase):
         row = common.parse_stream(stream({"type": "user", "message": {"content": "usage limit guidance"}}, result()))
         self.assertEqual("ok", row["status"])
 
+    def test_successful_limit_advice_is_not_quota_failure(self):
+        for message in ("Set a weekly limit on spending.", "The print reached the bed limit.",
+                        "Laser beds have a size limit; reset the origin first.", "Explain usage limits."):
+            with self.subTest(message=message):
+                row = common.parse_stream(stream({"type": "assistant", "message": {"content": [
+                    {"type": "text", "text": message}]}}, result(result=message)))
+                self.assertEqual("ok", row["status"])
+
+    def test_structured_quota_error_and_process_error(self):
+        row = common.parse_stream(stream({"type": "assistant", "error": "rate_limit", "message": {}}))
+        self.assertEqual("usage_limit", row["status"])
+        row = common.parse_stream("", "Rate limit exceeded", returncode=1)
+        self.assertEqual("usage_limit", row["status"])
+        row = common.parse_stream(stream(result(is_error=True, result="The print reached the bed limit.")))
+        self.assertEqual("session_error", row["status"])
+
     def test_malformed_and_missing_result_are_errors(self):
         self.assertEqual("missing_result", common.parse_stream("garbage")["status"])
         self.assertEqual("malformed_stream", common.parse_stream("garbage\n" + stream(result()))["status"])
