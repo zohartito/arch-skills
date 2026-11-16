@@ -14,7 +14,8 @@ PDF preflight use PyMuPDF from `requirements-arch-tools.txt`.
 ```bash
 python3 -m unittest discover -s evals/tests -v
 python3 evals/run_triggers.py --limit 4 --dry-run
-# Fresh output directory for this invocation; these two commands spend subscription quota.
+# Fresh output directory for this invocation.
+# Only the live trigger run spends subscription quota; check_triggers.py scores the CSV locally.
 eval_run_dir=$(mktemp -d "${TMPDIR:-/tmp}/arch-evals.XXXXXX")
 python3 evals/run_triggers.py --limit 2 --output "$eval_run_dir/smoke.csv"
 python3 evals/check_triggers.py "$eval_run_dir/smoke.csv"  # expected INCOMPLETE for 2/60 rows
