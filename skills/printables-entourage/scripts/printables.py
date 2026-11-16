@@ -17,13 +17,18 @@ from __future__ import annotations
 
 import argparse
 import csv
+import http.client
+import ipaddress
 import json
+import socket
 import sys
+import urllib.parse
 import urllib.request
 from io import BytesIO
 from pathlib import Path
 
 API = "https://api.printables.com/graphql/"
+DOWNLOAD_HOSTS = {"media.printables.com"}
 HEADERS = {"content-type": "application/json", "origin": "https://www.printables.com", "referer": "https://www.printables.com/",
            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0 Safari/537.36"}
 SEARCH_Q = ("query SearchModels($query: String!, $limit: Int) { result: searchPrints2(query: $query, limit: $limit) "
@@ -60,9 +65,53 @@ def download_link(model_id: str, file_id: str, file_type: str = "stl") -> str:
     return out["output"]["link"]
 
 
+def validate_download_url(url: str) -> None:
+    parsed = urllib.parse.urlsplit(url)
+    if (parsed.scheme != "https" or parsed.hostname not in DOWNLOAD_HOSTS
+            or parsed.port not in (None, 443) or parsed.username is not None or parsed.password is not None):
+        raise ValueError("downloads require HTTPS on media.printables.com, port 443, without credentials")
+
+
+class DownloadHTTPSConnection(http.client.HTTPSConnection):
+    def connect(self):
+        # Connect to the exact public addresses checked here, avoiding a second DNS
+        # lookup between validation and connection. TLS still verifies the host name.
+        addresses = socket.getaddrinfo(self.host, self.port, type=socket.SOCK_STREAM)
+        if not addresses or any(not ipaddress.ip_address(a[4][0]).is_global
+                                or ipaddress.ip_address(a[4][0]).is_multicast for a in addresses):
+            raise ValueError("download destination must resolve only to public addresses")
+        last_error = None
+        for family, kind, proto, _, address in addresses:
+            sock = socket.socket(family, kind, proto)
+            try:
+                sock.settimeout(self.timeout)
+                sock.connect(address)
+                self.sock = self._context.wrap_socket(sock, server_hostname=self.host)
+                return
+            except OSError as exc:
+                last_error = exc
+                sock.close()
+        raise last_error
+
+
+class DownloadHTTPSHandler(urllib.request.HTTPSHandler):
+    def https_open(self, req):
+        return self.do_open(DownloadHTTPSConnection, req, context=self._context)
+
+
+class DownloadRedirectHandler(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        validate_download_url(newurl)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
 def fetch_bytes(url: str, timeout: int = 300) -> bytes:
-    return urllib.request.urlopen(urllib.request.Request(url, headers={"user-agent": HEADERS["user-agent"]}),
-                                  timeout=timeout).read()
+    validate_download_url(url)
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), DownloadHTTPSHandler(),
+                                         DownloadRedirectHandler())
+    with opener.open(urllib.request.Request(url, headers={"user-agent": HEADERS["user-agent"]}),
+                     timeout=timeout) as response:
+        return response.read()
 
 
 def cmd_search(args):

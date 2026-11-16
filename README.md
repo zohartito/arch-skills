@@ -131,7 +131,8 @@ python3 scripts/check_ledger.py path/to/dossier
 - `stage_usb.py` was written for macOS (`/Volumes`, and `F_NOCACHE` so the re-read comes from the stick, not the
   page cache). It imports `fcntl`, so it does not run on Windows; Linux is untested.
 - `printables.py` uses the GraphQL API that the printables.com pages call. It is unofficial and may change or stop
-  working. Check each model's licence before you use it.
+  working. Downloads and redirects are restricted to HTTPS `media.printables.com` on port 443 with public
+  destination addresses; a different CDN host is refused until reviewed. Check each model's licence before you use it.
 - `sun-study` computes direct sun only: no diffuse light, radiation, or daylight metrics. Its one built-in site
   preset is `los-angeles-ca`; use `--lat/--lon/--tz` or `--epw` for anywhere else.
 - `rhino-safe-capture`'s hook cannot tell a slot the agent spawned from one it adopted, and it does not cover the
