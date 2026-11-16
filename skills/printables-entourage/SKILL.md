@@ -1,6 +1,6 @@
 ---
 name: printables-entourage
-description: Find, download and prepare REALISTIC 3D-printable entourage for physical architecture models — scale people, dogs, cats, cars, plants, benches, tables — at the model's exact scale (1/4", 1/8", 1:50, 1:100), repaired for Bambu Studio, display bases cut off, thin leaves thickened, laid out on one print plate, with an author/licence ledger. Downloads go through the Printables API (no browser "Save as" dialogs). Use whenever the user wants people, pets, cars, trees, plants or furniture for a model, says "entourage", "scale figures", "make it feel lively", "to scale", "find assets to print", "download the models", or asks whether a model should have people or pets at all — even if they don't name a site.
+description: Find, download and prepare REALISTIC 3D-printable entourage for physical architecture models — scale people, dogs, cats, cars, plants, benches, tables — at the model's exact scale (1/4", 1/8", 1:50, 1:100), repaired for Bambu Studio, display bases cut off, thin leaves thickened, combined in an unbounded row STL for slicer arrangement, with an author/licence ledger. Downloads go through the Printables API (no browser "Save as" dialogs). Use whenever the user wants people, pets, cars, trees, plants or furniture for a model, says "entourage", "scale figures", "make it feel lively", "to scale", "find assets to print", "download the models", or asks whether a model should have people or pets at all — even if they don't name a site.
 ---
 
 # Printables entourage
@@ -37,6 +37,8 @@ have the screen".
    files, with a ledger row (file, model, author, licence, source URL) that you can cite on the board.
 3. **Prepare at true scale.** Write a `spec.csv` (columns documented in `prep_entourage.py`), then:
    `prep_entourage.py spec.csv --src downloads --mmft 6.35 --out prepped/1-4in --plate pets-plate_1-4in.stl`
+   `--plate` writes one combined STL in a single row with gaps. It does not pack a usable bed or check
+   bed dimensions: split into objects in the slicer, auto-arrange, and split across plates as needed.
    - Real sizes used: person 5.5–6 ft; cat 0.95 ft sitting height, 1.6 ft long lying, 1.2 ft curled; Labrador
      sitting 2.0 ft; French bulldog 1.2 ft; Great Dane 3.0 ft; agave 3 ft across; Mini 12.7 ft long; hatchback
      14.3 × 6.7 × 4.4 ft. Read the printed sizes and real equivalents the script reports, and fix any wrong one.

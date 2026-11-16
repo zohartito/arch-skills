@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Downloaded entourage (people, pets, cars, plants, furniture) -> repaired STLs at true model scale + one print plate.
+"""Downloaded entourage (people, pets, cars, plants, furniture) -> repaired STLs at true model scale + an unbounded combined row STL.
 
     prep_entourage.py spec.csv --src downloads/ --mmft 6.35 --out prepped/1-4in --plate pets-plate_1-4in.stl [--gap 3]
 
@@ -83,7 +83,7 @@ def main(argv=None) -> int:
     ap.add_argument("--src", required=True)
     ap.add_argument("--mmft", type=float, required=True, help="mm per real foot: 1/4in 6.35, 1/8in 3.175, 1/16in 1.5875")
     ap.add_argument("--out", required=True)
-    ap.add_argument("--plate", help="also write all items on one plate STL")
+    ap.add_argument("--plate", help="also write an unbounded row STL; arrange/split in the slicer (no bed-fit check)")
     ap.add_argument("--gap", type=float, default=3.0, help="mm between items on the plate")
     args = ap.parse_args(argv)
 

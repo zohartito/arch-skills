@@ -66,7 +66,7 @@ in each SKILL.md lists the phrases).
 | `physical-model-prep` | Fabrication rules, laser layer conventions, starting laser settings (ULS PLS6.150D), fit clearances, mesh checks, verified USB staging | rhino3dm, trimesh |
 | `bambu-print-recipes` | Bambu Studio settings and orientation for model parts (roofs, fins, railings, screens, furniture, figures), keeping supports off delicate parts | Bambu Studio; no scripts |
 | `stl-fit-and-repair` | Pull parts from a saved .3dm, weld to one body, thicken thin parts, repair downloads, fit a new part to already-printed ones, render views | trimesh, manifold3d, pymeshfix, scipy, scikit-image |
-| `printables-entourage` | Search and download printable people, pets, cars and plants from Printables, scale them to the model, repair, lay out one plate, keep a licence ledger | network access to printables.com; `stl-fit-and-repair` |
+| `printables-entourage` | Search and download printable people, pets, cars and plants from Printables, scale them to the model, repair, combine into an unbounded row STL, keep a licence ledger | network access to printables.com; `stl-fit-and-repair` |
 | `model-assembly-sheet` | 1:1 placement PDF for gluing pieces onto a base, with post holes and brass cut lengths | trimesh, matplotlib |
 | `sun-study` | Sun positions and direct-sun hours on a grid through context geometry, headless (no Rhino GUI) | ladybug-core, trimesh (+ embreex), rhino3dm |
 | `precedent-dossier` | Folder layout, source ledger and citation rules for precedent research, with a ledger validator | Python standard library |
