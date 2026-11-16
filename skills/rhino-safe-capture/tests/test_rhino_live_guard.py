@@ -81,6 +81,14 @@ class GuardCases(unittest.TestCase):
     def test_other_tools_untouched(self):
         self.assertEqual(decision("mcp__rhino-mcneel__get_viewport_image", {"view": "top"}), "allow")
 
+    def test_documented_regex_alias_limitations(self):
+        # Characterize known gaps; an allow response is not proof of read-only code.
+        for script in ("import rhinoscriptsyntax as rsx; rsx.DeleteObjects(ids)",
+                       "from rhinoscriptsyntax import DeleteObjects; DeleteObjects(ids)",
+                       "table = sc.doc.Objects; table.Delete(obj, True)"):
+            with self.subTest(script=script):
+                self.assertEqual(decision("mcp__rhino-mcneel__run_python", {"script": script}), "allow")
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=1)

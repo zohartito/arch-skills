@@ -62,7 +62,7 @@ in each SKILL.md lists the phrases).
 | Skill | What it does | Needs |
 |---|---|---|
 | `sheet-review` | Preflight of an exported sheet PDF (size, fonts, image PPI, small/placeholder text, hairlines, off-palette and legend-only colours, diff against the previous export), tile images for a visual pass, optional read-only InDesign audit | PyMuPDF; for the audit, InDesign + an `execute_extend_script` tool that is not in upstream adb-mcp yet (see Limits) |
-| `rhino-safe-capture` | Rules for capturing from Rhino without changing the user's open document, plus a hook that blocks mutating Rhino MCP calls | Rhino 8 with the `rhino-mcneel` or `rhino-community` MCP server; Claude Code for the hook |
+| `rhino-safe-capture` | Rules for capturing from Rhino without changing the user's open document, plus a partial regex hook that blocks recognized mutating Rhino MCP calls | Rhino 8 with the `rhino-mcneel` or `rhino-community` MCP server; Claude Code for the hook |
 | `physical-model-prep` | Fabrication rules, laser layer conventions, starting laser settings (ULS PLS6.150D), fit clearances, mesh checks, verified USB staging | rhino3dm, trimesh |
 | `bambu-print-recipes` | Bambu Studio settings and orientation for model parts (roofs, fins, railings, screens, furniture, figures), keeping supports off delicate parts | Bambu Studio; no scripts |
 | `stl-fit-and-repair` | Pull parts from a saved .3dm, weld to one body, thicken thin parts, repair downloads, fit a new part to already-printed ones, render views | trimesh, manifold3d, pymeshfix, scipy, scikit-image |
@@ -135,7 +135,9 @@ python3 scripts/check_ledger.py path/to/dossier
 - `sun-study` computes direct sun only: no diffuse light, radiation, or daylight metrics. Its one built-in site
   preset is `los-angeles-ca`; use `--lat/--lon/--tz` or `--epw` for anywhere else.
 - `rhino-safe-capture`'s hook cannot tell a slot the agent spawned from one it adopted, and it does not cover the
-  community server's single-object tools. The SKILL.md says so.
+  community server's single-object tools. Its regex checks miss aliases, direct imports and indirect calls;
+  an allow response does not prove a script is read-only. Review arbitrary scripts and use a spawned slot
+  or saved-file analysis whenever read-only behavior is uncertain. The SKILL.md describes these limits.
 - `bambu-print-recipes` uses Bambu Studio 2.x labels and the macOS preset folder.
 
 ## License
