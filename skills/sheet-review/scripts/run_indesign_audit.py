@@ -27,7 +27,7 @@ def load_indesign_server():
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--doc", default="", help="open document name, e.g. SHEET_v19_REVIEW.indd (default: active)")
-    parser.add_argument("--app", default="", help='e.g. "Adobe InDesign 2026 (Beta)" when both versions are open')
+    parser.add_argument("--app", default="", help="app name, needed only when the release and the Beta are both running (the error lists the names)")
     parser.add_argument("--min-ppi", type=int, default=150)
     parser.add_argument("--out", type=Path, help="write the JSON result here")
     args = parser.parse_args()
