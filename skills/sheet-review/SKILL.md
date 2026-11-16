@@ -59,7 +59,7 @@ Scripts live in this skill's `scripts/` folder; run commands from the skill fold
 
 | Check | Meaning | Watch for |
 |---|---|---|
-| `page-size` FAIL | wrong size or orientation | — |
+| `page-size` FAIL | wrong dimensions; either orientation passes | check orientation visually |
 | `font-not-embedded` FAIL | the plotter may substitute | — |
 | `low-ppi-image` | effective PPI at placed size | bbox can extend past the page on cropped images |
 | `small-text` | spans below `--min-text-pt` (6) | sizes are listed, the smallest is located |
