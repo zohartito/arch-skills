@@ -58,3 +58,45 @@ def test_superseded_sources_are_skipped(tmp_path, monkeypatch, selection):
     assert old.read_bytes() == b"old version"
     if selection == "glob":
         assert (dest / "current.dxf").read_bytes() == b"current version"
+
+
+@pytest.mark.parametrize("link_at", ["manifest", "source", "destination", "kept", "source-parent", "dest-parent"])
+def test_staging_rejects_symlinks(tmp_path, monkeypatch, link_at):
+    source_dir, dest = tmp_path / "source", tmp_path / "usb"
+    source_dir.mkdir()
+    dest.mkdir()
+    source = source_dir / "part.dxf"
+    source.write_bytes(b"fabrication data")
+    sentinel = tmp_path / "outside"
+    sentinel.write_bytes(b"preserve")
+    if link_at == "manifest":
+        (dest / stage_usb.MANIFEST_NAME).symlink_to(sentinel)
+    elif link_at == "source":
+        source = source_dir / "link.dxf"
+        source.symlink_to(sentinel)
+    elif link_at in ("destination", "kept"):
+        (dest / ("part.dxf" if link_at == "destination" else "kept.txt")).symlink_to(sentinel)
+    elif link_at == "source-parent":
+        (tmp_path / "alias").symlink_to(source_dir, target_is_directory=True)
+        source = tmp_path / "alias/part.dxf"
+    else:
+        (tmp_path / "alias").symlink_to(dest, target_is_directory=True)
+        dest = tmp_path / "alias/subfolder"
+    assert stage(monkeypatch, [source], dest, "--overwrite") == 2
+    assert sentinel.read_bytes() == b"preserve"
+
+
+def test_manifest_publication_failure_preserves_previous(tmp_path, monkeypatch):
+    source, dest = tmp_path / "part.dxf", tmp_path / "usb"
+    source.write_bytes(b"new")
+    dest.mkdir()
+    manifest = dest / stage_usb.MANIFEST_NAME
+    manifest.write_text("old manifest\n")
+    real_replace = stage_usb.os.replace
+    def fail_manifest(src, target):
+        if Path(target) == manifest:
+            raise OSError("manifest publication failed")
+        return real_replace(src, target)
+    monkeypatch.setattr(stage_usb.os, "replace", fail_manifest)
+    assert stage(monkeypatch, [source], dest) == 2
+    assert manifest.read_text() == "old manifest\n"
