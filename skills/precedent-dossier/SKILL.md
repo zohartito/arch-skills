@@ -63,7 +63,10 @@ beats a listing on legal program; the architect beats the permit on intent.
 - **Dimensions** come only from a drawing or record that writes the number or states a
   scale: `[S021 p.3, written]` or `[S021 p.3, scaled 1/8"=1'-0"]`. Never from a photo,
   render, or image proportions. Published areas are "published figures", not measurements.
-  Our own derived numbers say `[derived: method]` and cite their inputs (facts-sheet pattern).
+  Our own derived numbers say `[derived: method]` and cite their ledgered inputs on the same
+  line (facts-sheet pattern). In a Dimensions table, the source + pinpoint and method may
+  be in separate cells of the same row. Label reported values explicitly as `published figure`
+  (with a source); `reported` alone does not distinguish a figure from a measurement.
 - **Intent layers stay separate:** architect-stated / team- or client-stated / firm-general
   / observed in photos / our inference. Label which layer each move belongs to.
 - Status words from the project's evidence vocabulary: `verified-file`, `verified-live`,
@@ -109,20 +112,40 @@ listing stay listed side by side; never average them into one "verified" number.
 ## 7. Validate
 
 ```bash
-python3 scripts/check_ledger.py <dossier>   # from this skill's folder
+python3 scripts/check_ledger.py <dossier> --strict-dimensions   # from this skill's folder
 ```
 
 Exit 1 = hard errors (bad/missing columns, duplicate or malformed ids, bad URLs, empty
-required fields, notes citing ids that aren't in the ledger). Warnings: ledger rows never
-cited, inline URLs not in the ledger, lines with a number + unit and no source on the same
-line, boilerplate qualifications, duplicate URLs. Markdown links to ledger URLs count as
-citations, so older URL-cited dossiers can still be checked.
+required fields, notes citing ids that aren't in the ledger) or, with `--strict-dimensions`,
+missing/incomplete dimension provenance. Without that flag, dimension findings are warnings
+and do not change the exit code. Other warnings stay warnings in either mode: ledger rows
+never cited, inline URLs not in the ledger, `[unsourced]` tags, boilerplate qualifications,
+duplicate URLs.
+
+For each Markdown line/row with a number + unit, provide one of:
+- **Written:** ledgered source, pinpoint, `written` (e.g. `[S021 p.3, written]`).
+- **Scaled:** ledgered source, pinpoint, `scaled` and an explicit positive ratio or scale
+  equation (e.g. `[S021 sheet A101, scaled 1:100]` or `scaled 1/8"=1'-0"`).
+- **Derived:** a nonempty `[derived: method]` and ledgered input citations on that line/row.
+- **Published figure:** explicitly label it `published figure` and cite a ledgered source;
+  this is a reported value, not a measurement, so no measurement method/scale is required.
+
+Pinpoints include `p.3`, `page 3`, `sheet A101`, `fig.4`, or `timestamp 01:34`.
+Markdown links to ledger URLs still count as citations; put the pinpoint in the link label
+or beside it (`[plan p.3](ledger-url), written`). A ledger URL's `#page=3` also supplies a
+page pinpoint. Source and method may be in separate cells of the same table row.
+
+This is a line-based structural check, not source verification or a Markdown/units parser.
+It cannot verify method correctness, source authority, or match each input to a calculation;
+keep one claim per line/row and inspect the cited evidence. JSON receives citation checks
+only; fenced examples are skipped. Offline regressions: `python3 -m unittest discover -s tests -v`.
 
 ## Done means
 
 - [ ] README identity table: every architect/year/client cell has ids and a confidence word
-- [ ] `check_ledger.py` exits 0; each remaining warning is fixed or explained in VERIFICATION
-- [ ] No dimension without a drawing/record id and a stated scale or "written"
+- [ ] `check_ledger.py --strict-dimensions` exits 0; remaining warnings fixed or explained in VERIFICATION
+- [ ] Measured dimensions have source + pinpoint and `written` or `scaled` + scale; derived
+      values have method + ledgered inputs; published figures are labelled and sourced
 - [ ] Each note: intent layers separated, `## Contradictions`, `## Do not reintroduce`, search audit
 - [ ] Every saved file is in ASSET-INVENTORY.json with source id and sha256
 - [ ] DRAWINGS.md says what was **not** found (no sections? say so) and the best next access route

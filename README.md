@@ -99,7 +99,7 @@ python -I scripts/placement_sheet.py sheet.json
 python scripts/sun_study.py --lat 34.05 --lon -118.25 --tz -8 --date 12-21 --hours 7-17 --step-min 30 --sunpath-only
 
 # precedent-dossier: validate a dossier's ledger and citations
-python3 scripts/check_ledger.py path/to/dossier
+python3 scripts/check_ledger.py path/to/dossier --strict-dimensions
 ```
 
 `python` here means the venv's Python from Install.
@@ -108,6 +108,8 @@ python3 scripts/check_ledger.py path/to/dossier
 
 - `skills/sun-study/tests/` (pytest, analytic sun-angle and shading checks): `python -m pytest tests -q`
 - `skills/rhino-safe-capture/tests/test_rhino_live_guard.py` (unittest)
+- `skills/precedent-dossier/tests/` (offline, standard library): from the repo root,
+  `python -m unittest discover -s skills/precedent-dossier/tests -v`
 - `skills/sheet-review/tests/seeded_eval.py SHEET.pdf --work DIR --palette "#000000,#ffffff"` plants five known
   defects in a copy of a sheet and scores the preflight against them. It needs a real sheet PDF (none is included).
 - `skills/*/evals/evals.json` hold example prompts with expected behaviour, for agent evals.
