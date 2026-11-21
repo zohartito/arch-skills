@@ -147,6 +147,34 @@ these metrics alone cannot demonstrate better task quality.
 `results/verification-2026-11-15.md` records the smoke evidence and remaining checks.
 `results/sweep-2026-11-15.md` records the full sweep, the description change it led to, and one baseline pair.
 
+## Offline PDF review-completion gate
+
+`python3 -m unittest discover -s evals/tests -v` also exercises the real PDF preflight
+CLI against the committed two-page fixture. The review-gate tests need the preflight's
+existing dependencies (PyMuPDF, numpy, Pillow and scipy); they make no model/network calls.
+They check artifact/settings binding, exact tile and page coverage, persisted review
+preservation, open issues, and non-waivable automated FAILs. Temporary outputs stay in
+this checkout and are removed after the tests. A focused run is:
+
+```bash
+python3 evals/tests/test_review_gate.py -v
+```
+
+For a paired baseline, save `pdf_preflight.py` from the revision under comparison into
+a scratch directory in this checkout, then run:
+
+```bash
+python3 evals/tests/test_review_gate.py --baseline <scratch>/pdf_preflight.py -v
+```
+
+The baseline runs the same fixture/PDF variants and check/render options without the new
+review flags. Its actual automated-only exit code is compared with the candidate's strict
+exit code; findings must remain identical for every pair. This measures invalid-completion
+rejection, **not visual review quality**: clean/issue entries are synthetic test inputs,
+and low DPI keeps protocol tests fast. See
+[`results/review-gate-2026-11-21.md`](results/review-gate-2026-11-21.md) for measured results
+and the existing Windows failures in the broader suite.
+
 ## `claude plugin eval` suite
 
 `evals/plugin-eval/` holds a suite in Claude Code's own

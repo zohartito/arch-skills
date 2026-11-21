@@ -35,12 +35,17 @@ Scripts live in this skill's `scripts/` folder; run commands from the skill fold
      --expect-size 36x24 --palette <project>/standards/linework.md --compare PREVIOUS.pdf
    ```
    Dependencies are PyMuPDF, numpy, Pillow and scipy (all in `requirements-arch-tools.txt`).
-   Exit 1 means a FAIL. Outputs are `report.md`, `report.json`, `p<N>-overview.png` with the
-   tile grid labeled, `tiles/p<N>-r<row>c<col>.png` at 150 dpi (`--tile-dpi 300` for fine
-   linework) and `p<N>-diff.png`. Always pass `--compare` when a previous export exists: the
-   changed-region list is the cheapest way to catch a stray line or an accidental move.
-4. **Visual pass on every tile, in order.** For each tile write `clean` or the issue with
-   its tile id. Look at the overview first for composition at fit-page distance. Then, per tile:
+   By default, exit 0/1 still means automated checks only (no FAIL / FAIL), **not review
+   acceptance**. Outputs are `report.md`, `report.json`, `review.json` (created only if absent),
+   `p<N>-overview.png` with the tile grid labeled, `tiles/p<N>-r<row>c<col>.png` at 150 dpi
+   (`--tile-dpi 300` for fine linework) and `p<N>-diff.png`. Reports include the PDF SHA-256,
+   full-document page scope, and a deterministic contract digest of check/render settings,
+   comparison PDF hash, resolved palette and tile inventory. Always pass `--compare` when a
+   previous export exists: the changed-region list is the cheapest way to catch a stray line
+   or an accidental move.
+4. **Visual pass on every tile, in order.** In `review.json`, change each tile's `pending`
+   status to `clean` (with `issues: []`) or `issue`. Never auto-fill clean entries without
+   inspecting the images. Look at the overview first for composition at fit-page distance. Then, per tile:
    - **Stray linework:** construction lines, duplicates, lines crossing furniture, beds or
      text, lines outside a drawing frame, broken hatch boundaries.
    - **Legend ↔ symbol:** every legend swatch appears on the drawing it keys, and every
@@ -54,9 +59,35 @@ Scripts live in this skill's `scripts/` folder; run commands from the skill fold
      standard asks for them. NTS appears only where intended.
    - **Text:** readable at print size, nothing clipped, no placeholders, consistent titles.
    - **Images:** pixelation or banding. Section cut marks match the section titles.
-5. **Report in three columns:** *verified by script* / *seen in visual pass* / *not checked*.
+5. **Enforce completion, then report in three columns:** *verified by script* / *seen in
+   visual pass* / *not checked*. Rerun the **same preflight command and options**, adding
+   `--require-review --review <checks>/sheet-review-<date>/review.json`.
+   Strict exits: **0 complete**, **1 fail** (automated FAIL or open visual issue), **2 incomplete**
+   (pending/malformed/mismatched review, missing/duplicate/unknown tile IDs, partial pages,
+   or `--no-tiles`). Automated FAILs cannot be waived by visual records.
    Keep status words exact: exported ≠ printed ≠ submitted. Never call a sheet ready with
-   an open FAIL, an unreviewed tile, or unsaved INDD changes.
+   an open FAIL, an unreviewed tile, or unsaved INDD changes. A complete PDF review does not
+   certify InDesign state, actual human inspection, printing or submission.
+
+### Persisted review records
+
+Keep the generated `schema_version`, `pdf_sha256`, `contract_sha256` and `pages` fields.
+There must be exactly one record per generated tile ID. For example:
+
+```json
+{"tile": "p1-r1c1.png", "status": "clean", "issues": []}
+```
+
+An issue record uses `"status": "issue"` and an `issues` list containing objects such as
+`{"message": "stray line across bed", "status": "open"}`. A resolved issue needs
+`"status": "resolved"` and a nonempty `"resolution"` note; this records a disposition on
+this unchanged artifact, not permission to reuse a review after editing the PDF.
+
+Existing review files are **never overwritten**, including incomplete or stale ones.
+If the PDF, comparison PDF, palette or check/render settings change, start in a new output
+folder (or use a new `--review` path) and inspect the new tiles. `report.json` also contains
+`pending_review`, a fresh template for the current run. Never copy old hashes into a review
+or mark pending tiles clean merely to obtain exit 0.
 
 ## Reading the automated findings
 

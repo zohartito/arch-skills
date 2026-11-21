@@ -9,6 +9,7 @@ the visual pass covers every square inch instead of a fit-to-screen glance.
 import argparse
 import datetime as dt
 import json
+import math
 import re
 from collections import defaultdict
 from pathlib import Path
@@ -17,6 +18,8 @@ import fitz  # PyMuPDF
 import numpy as np
 from PIL import Image, ImageDraw
 from scipy import ndimage
+
+from review_state import build_contract, load_or_create, pending_review, sha256, validate_review
 
 POINTS_PER_INCH = 72.0
 PLACEHOLDER_PATTERN = re.compile(r"\b(lorem|ipsum|placeholder|todo|tbd|xxx+|tk)\b", re.IGNORECASE)
@@ -271,6 +274,13 @@ def write_markdown(summary, out_dir):
         "",
         "Automated checks cannot see stray linework, legend-to-symbol meaning, or drawing logic.",
         "Finish with the visual pass on every tile (see SKILL.md checklist).",
+        f"PDF SHA-256: `{summary['pdf_sha256']}`",
+        f"Review contract SHA-256: `{summary['review_contract_sha256']}`",
+        f"Full-document page scope: {summary['review_contract']['page_scope']}",
+        f"Review: **{summary['review']['status']}** · `{summary['review']['path']}` · "
+        f"{'strict gate' if summary['review']['required'] else 'automated-only exit status (not review acceptance)'}",
+        *[f"- {error}" for error in summary['review']['errors']],
+        *[f"- Open visual issue: {issue}" for issue in summary['review']['open_issues']],
         "",
         "| Level | Page | Check | Message | Where (in, from top-left) |",
         "|---|---|---|---|---|",
@@ -285,7 +295,7 @@ def write_markdown(summary, out_dir):
             lines.append("")
             lines.append("Scale notations found (check each against the drawing it labels):")
             lines += [f"- `{note['match']}` in “{note['text']}” at {note['bbox_in']}" for note in page["scale_notes"]]
-    (out_dir / "report.md").write_text("\n".join(lines) + "\n")
+    (out_dir / "report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def main():
@@ -305,15 +315,45 @@ def main():
     parser.add_argument("--overlap-in", type=float, default=0.5)
     parser.add_argument("--compare-dpi", type=int, default=50)
     parser.add_argument("--no-tiles", action="store_true")
+    parser.add_argument("--require-review", action="store_true",
+                        help="require complete tile review: exit 0 complete, 1 fail, 2 incomplete")
+    parser.add_argument("--review", type=Path, help="review JSON (default: OUT/review.json); never overwritten")
     args = parser.parse_args()
+    for name in ("min_ppi", "min_text_pt", "min_stroke_pt", "overview_dpi", "tile_dpi", "tile_in", "compare_dpi"):
+        value = getattr(args, name)
+        if not math.isfinite(value) or value < 0 or (not name.startswith("min_") and value == 0):
+            parser.error(f"--{name.replace('_', '-')} must be finite and nonnegative (positive for render sizes)")
+    if not math.isfinite(args.overlap_in) or not 0 <= args.overlap_in < args.tile_in:
+        parser.error("--overlap-in must be nonnegative and less than --tile-in")
 
     out_dir = args.out.expanduser().resolve()
-    out_dir.mkdir(parents=True, exist_ok=True)
-    document = fitz.open(args.pdf)
-    previous = fitz.open(args.compare) if args.compare else None
+    review_path = (args.review or out_dir / "review.json").expanduser().resolve()
+    # Hash the exact bytes opened by MuPDF, not a later read of a possibly changed export.
+    pdf_bytes = args.pdf.read_bytes()
+    previous_bytes = args.compare.read_bytes() if args.compare else None
+    document = fitz.open(stream=pdf_bytes, filetype="pdf")
+    previous = fitz.open(stream=previous_bytes, filetype="pdf") if previous_bytes is not None else None
     palette = load_palette(args.palette)
-    expect = parse_size(args.expect_size)
-    page_numbers = [int(part) for part in args.pages.split(",")] if args.pages else range(1, document.page_count + 1)
+    try:
+        expect = parse_size(args.expect_size)
+        page_numbers = sorted(int(part) for part in args.pages.split(",")) if args.pages else list(range(1, document.page_count + 1))
+    except ValueError:
+        parser.error("invalid --expect-size or --pages")
+    if expect and any(not math.isfinite(value) or value <= 0 for value in expect):
+        parser.error("--expect-size dimensions must be finite and positive")
+    if (len(set(page_numbers)) != len(page_numbers)
+            or any(p < 1 or p > document.page_count for p in page_numbers)):
+        parser.error("--pages must contain unique page numbers within the document")
+    # Do not let a mistaken --review alias an output that this run will overwrite.
+    outputs = [out_dir / name for name in ("report.json", "report.md")]
+    for page_no in page_numbers:
+        outputs.extend(out_dir / f"p{page_no}-{view}.png" for view in ("overview", "diff"))
+        if not args.no_tiles:
+            outputs.extend(out_dir / "tiles" / f"p{page_no}-{label}.png"
+                           for label, _ in tile_rects(document[page_no - 1], args.tile_in, args.overlap_in))
+    if review_path in {path.resolve() for path in outputs}:
+        parser.error("--review must not name a generated report or image")
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     report = Report()
     pages = []
@@ -335,8 +375,26 @@ def main():
             page_summary["compare"] = compare_page(page, previous_page, page_no, out_dir, args.compare_dpi, report)
         pages.append(page_summary)
 
+    options = {name: getattr(args, name) for name in (
+        "min_ppi", "min_text_pt", "min_stroke_pt", "overview_dpi", "tile_dpi", "tile_in",
+        "overlap_in", "compare_dpi", "no_tiles",
+    )}
+    # argparse leaves numeric defaults as ints; explicit equivalent values are floats.
+    for name in ("min_ppi", "min_text_pt", "min_stroke_pt", "tile_in", "overlap_in"):
+        options[name] = float(options[name])
+    options.update(expect_size=sorted(expect) if expect else None, palette=palette,
+                   pages=page_numbers, compare_sha256=sha256(previous_bytes) if previous_bytes is not None else None)
+    contract, digest = build_contract(sha256(pdf_bytes), document.page_count, pages, options)
+    template = pending_review(contract, digest)
+    review, load_error = load_or_create(review_path, template)
+    review_result = validate_review(contract, digest, review, report.count("FAIL"), load_error)
     summary = {
         "pdf": str(args.pdf.resolve()),
+        "pdf_sha256": contract["pdf_sha256"],
+        "review_contract": contract,
+        "review_contract_sha256": digest,
+        "pending_review": template,
+        "review": {**review_result, "path": str(review_path), "required": args.require_review},
         "compare": str(args.compare.resolve()) if args.compare else None,
         "run_at": dt.datetime.now().isoformat(timespec="seconds"),
         "page_count": document.page_count,
@@ -347,8 +405,11 @@ def main():
     }
     (out_dir / "report.json").write_text(json.dumps(summary, indent=2))
     write_markdown(summary, out_dir)
-    print(f"{out_dir / 'report.md'} — FAIL {summary['counts']['FAIL']} · WARN {summary['counts']['WARN']} · INFO {summary['counts']['INFO']}")
-    raise SystemExit(1 if summary["counts"]["FAIL"] else 0)
+    print(f"{out_dir / 'report.md'} — FAIL {summary['counts']['FAIL']} · WARN {summary['counts']['WARN']} · INFO {summary['counts']['INFO']} · review {review_result['status']}")
+    document.close()
+    if previous is not None:
+        previous.close()
+    raise SystemExit(review_result["exit_code"] if args.require_review else (1 if summary["counts"]["FAIL"] else 0))
 
 
 if __name__ == "__main__":
