@@ -1,0 +1,1647 @@
+{
+  "tier1": [
+    {
+      "skill": "bambu-print-recipes",
+      "status": "passed",
+      "incomplete_scans": [],
+      "quality_score": 86.0,
+      "grade": "B",
+      "dimensions": {
+        "correctness": 85.0,
+        "discoverability": 90.0,
+        "reliability": 75.0,
+        "efficiency": 100.0
+      },
+      "severity_counts": {
+        "critical": 0,
+        "high": 0,
+        "medium": 4,
+        "low": 9
+      },
+      "findings": [
+        {
+          "severity": "medium",
+          "category": "SCHEMA",
+          "check": "body_recommended_section",
+          "message": "Missing recommended section: '## Instructions'",
+          "file": "bambu-print-recipes/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "SKILL_SPEC recommended field missing: 'metadata.author'",
+          "file": "bambu-print-recipes/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "SKILL_SPEC recommended field missing: 'metadata.tags'",
+          "file": "bambu-print-recipes/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "SCHEMA",
+          "check": "body_recommended_section",
+          "message": "Missing recommended section: '## Examples'",
+          "file": "bambu-print-recipes/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "No examples provided",
+          "file": "bambu-print-recipes/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_reliability",
+          "message": "No troubleshooting section documented",
+          "file": "bambu-print-recipes/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_reliability",
+          "message": "No prerequisites/requirements documented",
+          "file": "bambu-print-recipes/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "SCHEMA",
+          "check": "description_trigger",
+          "message": "Description has its trigger at characters 445-457; some harnesses show only the first ~60 characters in their skill list",
+          "file": "bambu-print-recipes/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "SCHEMA",
+          "check": "author_missing",
+          "message": "Author not specified in metadata",
+          "file": "bambu-print-recipes/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_reliability",
+          "message": "No mention of error handling or validation",
+          "file": "bambu-print-recipes/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_discoverability",
+          "message": "No '## Purpose' section",
+          "file": "bambu-print-recipes/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_discoverability",
+          "message": "Description very long (669 chars, recommend 50-150)",
+          "file": "bambu-print-recipes/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_reliability",
+          "message": "No limitations documented",
+          "file": "bambu-print-recipes/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "skill": "model-assembly-sheet",
+      "status": "passed",
+      "incomplete_scans": [],
+      "quality_score": 80.2,
+      "grade": "B",
+      "dimensions": {
+        "correctness": 65.0,
+        "discoverability": 90.0,
+        "reliability": 80.0,
+        "efficiency": 100.0
+      },
+      "severity_counts": {
+        "critical": 0,
+        "high": 0,
+        "medium": 6,
+        "low": 11
+      },
+      "findings": [
+        {
+          "severity": "medium",
+          "category": "SCHEMA",
+          "check": "body_recommended_section",
+          "message": "Missing recommended section: '## Instructions'",
+          "file": "model-assembly-sheet/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "Instructions don't mention 'run_script'",
+          "file": "model-assembly-sheet/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "No documented scripts in table format",
+          "file": "model-assembly-sheet/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "SKILL_SPEC recommended field missing: 'metadata.author'",
+          "file": "model-assembly-sheet/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "SKILL_SPEC recommended field missing: 'metadata.tags'",
+          "file": "model-assembly-sheet/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "SCHEMA",
+          "check": "body_recommended_section",
+          "message": "Missing recommended section: '## Examples'",
+          "file": "model-assembly-sheet/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "SCRIPT_LINT",
+          "check": "no_input_validation",
+          "message": "placement_sheet.py may lack input validation",
+          "file": "model-assembly-sheet/scripts/placement_sheet.py",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "No examples provided",
+          "file": "model-assembly-sheet/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_discoverability",
+          "message": "Description very long (667 chars, recommend 50-150)",
+          "file": "model-assembly-sheet/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_reliability",
+          "message": "No troubleshooting section documented",
+          "file": "model-assembly-sheet/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "SCHEMA",
+          "check": "description_trigger",
+          "message": "Description has its trigger at characters 355-363; some harnesses show only the first ~60 characters in their skill list",
+          "file": "model-assembly-sheet/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_reliability",
+          "message": "No prerequisites/requirements documented",
+          "file": "model-assembly-sheet/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "SCRIPT_LINT",
+          "check": "magic_numbers",
+          "message": "placement_sheet.py contains magic numbers",
+          "file": "model-assembly-sheet/scripts/placement_sheet.py",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "SCHEMA",
+          "check": "author_missing",
+          "message": "Author not specified in metadata",
+          "file": "model-assembly-sheet/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_discoverability",
+          "message": "No '## Purpose' section",
+          "file": "model-assembly-sheet/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_reliability",
+          "message": "Scripts may lack error handling: placement_sheet.py",
+          "file": "model-assembly-sheet/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_reliability",
+          "message": "No limitations documented",
+          "file": "model-assembly-sheet/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "skill": "physical-model-prep",
+      "status": "passed",
+      "incomplete_scans": [],
+      "quality_score": 80.2,
+      "grade": "B",
+      "dimensions": {
+        "correctness": 65.0,
+        "discoverability": 90.0,
+        "reliability": 80.0,
+        "efficiency": 100.0
+      },
+      "severity_counts": {
+        "critical": 0,
+        "high": 0,
+        "medium": 6,
+        "low": 12
+      },
+      "findings": [
+        {
+          "severity": "medium",
+          "category": "SCHEMA",
+          "check": "body_recommended_section",
+          "message": "Missing recommended section: '## Instructions'",
+          "file": "physical-model-prep/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "Instructions don't mention 'run_script'",
+          "file": "physical-model-prep/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "No documented scripts in table format",
+          "file": "physical-model-prep/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "SKILL_SPEC recommended field missing: 'metadata.author'",
+          "file": "physical-model-prep/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "SKILL_SPEC recommended field missing: 'metadata.tags'",
+          "file": "physical-model-prep/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "SCHEMA",
+          "check": "body_recommended_section",
+          "message": "Missing recommended section: '## Examples'",
+          "file": "physical-model-prep/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "No examples provided",
+          "file": "physical-model-prep/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "SCRIPT_LINT",
+          "check": "magic_numbers",
+          "message": "laser_kit.py contains magic numbers",
+          "file": "physical-model-prep/scripts/laser_kit.py",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_reliability",
+          "message": "No troubleshooting section documented",
+          "file": "physical-model-prep/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_reliability",
+          "message": "No prerequisites/requirements documented",
+          "file": "physical-model-prep/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_discoverability",
+          "message": "Description very long (842 chars, recommend 50-150)",
+          "file": "physical-model-prep/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "SCRIPT_LINT",
+          "check": "magic_numbers",
+          "message": "check_mesh.py contains magic numbers",
+          "file": "physical-model-prep/scripts/check_mesh.py",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "SCHEMA",
+          "check": "author_missing",
+          "message": "Author not specified in metadata",
+          "file": "physical-model-prep/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "SCHEMA",
+          "check": "description_trigger",
+          "message": "Description has its trigger at characters 415-423; some harnesses show only the first ~60 characters in their skill list",
+          "file": "physical-model-prep/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_discoverability",
+          "message": "No '## Purpose' section",
+          "file": "physical-model-prep/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_reliability",
+          "message": "Scripts may lack error handling: check_mesh.py, laser_kit.py",
+          "file": "physical-model-prep/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "SCRIPT_LINT",
+          "check": "magic_numbers",
+          "message": "stage_usb.py contains magic numbers",
+          "file": "physical-model-prep/scripts/stage_usb.py",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_reliability",
+          "message": "No limitations documented",
+          "file": "physical-model-prep/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "skill": "precedent-dossier",
+      "status": "passed",
+      "incomplete_scans": [],
+      "quality_score": 83.2,
+      "grade": "B",
+      "dimensions": {
+        "correctness": 70.0,
+        "discoverability": 90.0,
+        "reliability": 85.0,
+        "efficiency": 100.0
+      },
+      "severity_counts": {
+        "critical": 0,
+        "high": 0,
+        "medium": 6,
+        "low": 9
+      },
+      "findings": [
+        {
+          "severity": "medium",
+          "category": "SCHEMA",
+          "check": "body_recommended_section",
+          "message": "Missing recommended section: '## Instructions'",
+          "file": "precedent-dossier/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "Instructions don't mention 'run_script'",
+          "file": "precedent-dossier/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "No documented scripts in table format",
+          "file": "precedent-dossier/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "SKILL_SPEC recommended field missing: 'metadata.author'",
+          "file": "precedent-dossier/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "SKILL_SPEC recommended field missing: 'metadata.tags'",
+          "file": "precedent-dossier/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "SCHEMA",
+          "check": "body_recommended_section",
+          "message": "Missing recommended section: '## Examples'",
+          "file": "precedent-dossier/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_discoverability",
+          "message": "Description very long (773 chars, recommend 50-150)",
+          "file": "precedent-dossier/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_reliability",
+          "message": "No troubleshooting section documented",
+          "file": "precedent-dossier/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_reliability",
+          "message": "No prerequisites/requirements documented",
+          "file": "precedent-dossier/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "SCHEMA",
+          "check": "unexpected_file",
+          "message": "Unexpected 'templates' in skill root",
+          "file": "precedent-dossier/templates",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "SCHEMA",
+          "check": "author_missing",
+          "message": "Author not specified in metadata",
+          "file": "precedent-dossier/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_discoverability",
+          "message": "No '## Purpose' section",
+          "file": "precedent-dossier/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "SCHEMA",
+          "check": "description_trigger",
+          "message": "Description has its trigger at characters 563-570; some harnesses show only the first ~60 characters in their skill list",
+          "file": "precedent-dossier/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_reliability",
+          "message": "No limitations documented",
+          "file": "precedent-dossier/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "SCRIPT_LINT",
+          "check": "magic_numbers",
+          "message": "check_ledger.py contains magic numbers",
+          "file": "precedent-dossier/scripts/check_ledger.py",
+          "line": null,
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "skill": "printables-entourage",
+      "status": "passed",
+      "incomplete_scans": [],
+      "quality_score": 79.0,
+      "grade": "C",
+      "dimensions": {
+        "correctness": 65.0,
+        "discoverability": 90.0,
+        "reliability": 75.0,
+        "efficiency": 100.0
+      },
+      "severity_counts": {
+        "critical": 0,
+        "high": 0,
+        "medium": 6,
+        "low": 11
+      },
+      "findings": [
+        {
+          "severity": "medium",
+          "category": "SCHEMA",
+          "check": "body_recommended_section",
+          "message": "Missing recommended section: '## Instructions'",
+          "file": "printables-entourage/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "Instructions don't mention 'run_script'",
+          "file": "printables-entourage/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "No documented scripts in table format",
+          "file": "printables-entourage/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "SKILL_SPEC recommended field missing: 'metadata.author'",
+          "file": "printables-entourage/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "SKILL_SPEC recommended field missing: 'metadata.tags'",
+          "file": "printables-entourage/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "SCHEMA",
+          "check": "body_recommended_section",
+          "message": "Missing recommended section: '## Examples'",
+          "file": "printables-entourage/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "SCRIPT_LINT",
+          "check": "magic_numbers",
+          "message": "printables.py contains magic numbers",
+          "file": "printables-entourage/scripts/printables.py",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "No examples provided",
+          "file": "printables-entourage/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_reliability",
+          "message": "No troubleshooting section documented",
+          "file": "printables-entourage/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_reliability",
+          "message": "No prerequisites/requirements documented",
+          "file": "printables-entourage/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "SCHEMA",
+          "check": "author_missing",
+          "message": "Author not specified in metadata",
+          "file": "printables-entourage/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_discoverability",
+          "message": "Description very long (708 chars, recommend 50-150)",
+          "file": "printables-entourage/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "SCRIPT_LINT",
+          "check": "magic_numbers",
+          "message": "prep_entourage.py contains magic numbers",
+          "file": "printables-entourage/scripts/prep_entourage.py",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_reliability",
+          "message": "No mention of error handling or validation",
+          "file": "printables-entourage/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_discoverability",
+          "message": "No '## Purpose' section",
+          "file": "printables-entourage/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "SCHEMA",
+          "check": "description_trigger",
+          "message": "Description has its trigger at characters 412-424; some harnesses show only the first ~60 characters in their skill list",
+          "file": "printables-entourage/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_reliability",
+          "message": "No limitations documented",
+          "file": "printables-entourage/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "skill": "rhino-safe-capture",
+      "status": "passed",
+      "incomplete_scans": [],
+      "quality_score": 87.2,
+      "grade": "B",
+      "dimensions": {
+        "correctness": 85.0,
+        "discoverability": 85.0,
+        "reliability": 85.0,
+        "efficiency": 100.0
+      },
+      "severity_counts": {
+        "critical": 0,
+        "high": 0,
+        "medium": 4,
+        "low": 10
+      },
+      "findings": [
+        {
+          "severity": "medium",
+          "category": "SCHEMA",
+          "check": "body_recommended_section",
+          "message": "Missing recommended section: '## Instructions'",
+          "file": "rhino-safe-capture/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "SKILL_SPEC recommended field missing: 'metadata.author'",
+          "file": "rhino-safe-capture/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "SKILL_SPEC recommended field missing: 'metadata.tags'",
+          "file": "rhino-safe-capture/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "SCHEMA",
+          "check": "body_recommended_section",
+          "message": "Missing recommended section: '## Examples'",
+          "file": "rhino-safe-capture/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "No examples provided",
+          "file": "rhino-safe-capture/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_discoverability",
+          "message": "Broad description without negative triggers may cause over-triggering",
+          "file": "rhino-safe-capture/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_discoverability",
+          "message": "Description very long (635 chars, recommend 50-150)",
+          "file": "rhino-safe-capture/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "SCHEMA",
+          "check": "description_trigger",
+          "message": "Description has no 'Use when ...' trigger; some harnesses show only the first ~60 characters in their skill list",
+          "file": "rhino-safe-capture/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_reliability",
+          "message": "No troubleshooting section documented",
+          "file": "rhino-safe-capture/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_reliability",
+          "message": "No prerequisites/requirements documented",
+          "file": "rhino-safe-capture/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "SCHEMA",
+          "check": "unexpected_file",
+          "message": "Unexpected 'hooks' in skill root",
+          "file": "rhino-safe-capture/hooks",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "SCHEMA",
+          "check": "author_missing",
+          "message": "Author not specified in metadata",
+          "file": "rhino-safe-capture/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_discoverability",
+          "message": "No '## Purpose' section",
+          "file": "rhino-safe-capture/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_reliability",
+          "message": "No limitations documented",
+          "file": "rhino-safe-capture/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "skill": "sheet-review",
+      "status": "passed",
+      "incomplete_scans": [],
+      "quality_score": 83.2,
+      "grade": "B",
+      "dimensions": {
+        "correctness": 70.0,
+        "discoverability": 90.0,
+        "reliability": 85.0,
+        "efficiency": 100.0
+      },
+      "severity_counts": {
+        "critical": 0,
+        "high": 0,
+        "medium": 6,
+        "low": 9
+      },
+      "findings": [
+        {
+          "severity": "medium",
+          "category": "SCHEMA",
+          "check": "body_recommended_section",
+          "message": "Missing recommended section: '## Instructions'",
+          "file": "sheet-review/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "Instructions don't mention 'run_script'",
+          "file": "sheet-review/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "No documented scripts in table format",
+          "file": "sheet-review/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "SKILL_SPEC recommended field missing: 'metadata.author'",
+          "file": "sheet-review/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "SKILL_SPEC recommended field missing: 'metadata.tags'",
+          "file": "sheet-review/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "SCHEMA",
+          "check": "body_recommended_section",
+          "message": "Missing recommended section: '## Examples'",
+          "file": "sheet-review/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_reliability",
+          "message": "No troubleshooting section documented",
+          "file": "sheet-review/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_reliability",
+          "message": "No prerequisites/requirements documented",
+          "file": "sheet-review/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "SCHEMA",
+          "check": "author_missing",
+          "message": "Author not specified in metadata",
+          "file": "sheet-review/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "SCRIPT_LINT",
+          "check": "magic_numbers",
+          "message": "pdf_preflight.py contains magic numbers",
+          "file": "sheet-review/scripts/pdf_preflight.py",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_discoverability",
+          "message": "Description very long (626 chars, recommend 50-150)",
+          "file": "sheet-review/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_discoverability",
+          "message": "No '## Purpose' section",
+          "file": "sheet-review/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "SCRIPT_LINT",
+          "check": "magic_numbers",
+          "message": "run_indesign_audit.py contains magic numbers",
+          "file": "sheet-review/scripts/run_indesign_audit.py",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "SCHEMA",
+          "check": "description_trigger",
+          "message": "Description has its trigger at characters 429-437; some harnesses show only the first ~60 characters in their skill list",
+          "file": "sheet-review/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_reliability",
+          "message": "No limitations documented",
+          "file": "sheet-review/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "skill": "stl-fit-and-repair",
+      "status": "passed",
+      "incomplete_scans": [],
+      "quality_score": 81.5,
+      "grade": "B",
+      "dimensions": {
+        "correctness": 65.0,
+        "discoverability": 90.0,
+        "reliability": 85.0,
+        "efficiency": 100.0
+      },
+      "severity_counts": {
+        "critical": 0,
+        "high": 0,
+        "medium": 6,
+        "low": 12
+      },
+      "findings": [
+        {
+          "severity": "medium",
+          "category": "SCHEMA",
+          "check": "body_recommended_section",
+          "message": "Missing recommended section: '## Instructions'",
+          "file": "stl-fit-and-repair/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "Instructions don't mention 'run_script'",
+          "file": "stl-fit-and-repair/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "No documented scripts in table format",
+          "file": "stl-fit-and-repair/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "SKILL_SPEC recommended field missing: 'metadata.author'",
+          "file": "stl-fit-and-repair/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "SKILL_SPEC recommended field missing: 'metadata.tags'",
+          "file": "stl-fit-and-repair/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "SCHEMA",
+          "check": "body_recommended_section",
+          "message": "Missing recommended section: '## Examples'",
+          "file": "stl-fit-and-repair/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "No examples provided",
+          "file": "stl-fit-and-repair/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "SCRIPT_LINT",
+          "check": "magic_numbers",
+          "message": "render_views.py contains magic numbers",
+          "file": "stl-fit-and-repair/scripts/render_views.py",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "SCRIPT_LINT",
+          "check": "magic_numbers",
+          "message": "rhino_extract.py contains magic numbers",
+          "file": "stl-fit-and-repair/scripts/rhino_extract.py",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_reliability",
+          "message": "No troubleshooting section documented",
+          "file": "stl-fit-and-repair/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_reliability",
+          "message": "No prerequisites/requirements documented",
+          "file": "stl-fit-and-repair/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "SCRIPT_LINT",
+          "check": "magic_numbers",
+          "message": "fit_to_mates.py contains magic numbers",
+          "file": "stl-fit-and-repair/scripts/fit_to_mates.py",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "SCHEMA",
+          "check": "author_missing",
+          "message": "Author not specified in metadata",
+          "file": "stl-fit-and-repair/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "SCRIPT_LINT",
+          "check": "magic_numbers",
+          "message": "meshkit.py contains magic numbers",
+          "file": "stl-fit-and-repair/scripts/meshkit.py",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "SCHEMA",
+          "check": "description_trigger",
+          "message": "Description has its trigger at characters 449-461; some harnesses show only the first ~60 characters in their skill list",
+          "file": "stl-fit-and-repair/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_discoverability",
+          "message": "Description very long (800 chars, recommend 50-150)",
+          "file": "stl-fit-and-repair/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_discoverability",
+          "message": "No '## Purpose' section",
+          "file": "stl-fit-and-repair/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_reliability",
+          "message": "No limitations documented",
+          "file": "stl-fit-and-repair/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "skill": "sun-study",
+      "status": "failed",
+      "incomplete_scans": [],
+      "quality_score": 86.8,
+      "grade": "B",
+      "dimensions": {
+        "correctness": 80.0,
+        "discoverability": 95.0,
+        "reliability": 80.0,
+        "efficiency": 100.0
+      },
+      "severity_counts": {
+        "critical": 0,
+        "high": 1,
+        "medium": 2,
+        "low": 5
+      },
+      "findings": [
+        {
+          "severity": "high",
+          "category": "SCHEMA",
+          "check": "yaml_syntax",
+          "message": "Invalid YAML syntax in frontmatter: mapping values are not allowed here\n  in \"<unicode string>\", line 2, column 712:\n     ... 's sun exposure. Direct sun only: not for daylight factor, sDA/A ... \n                                         ^",
+          "file": "sun-study/SKILL.md",
+          "line": 3,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "Instructions don't mention 'run_script'",
+          "file": "sun-study/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "medium",
+          "category": "QUALITY",
+          "check": "quality_correctness",
+          "message": "No documented scripts in table format",
+          "file": "sun-study/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "SCRIPT_LINT",
+          "check": "magic_numbers",
+          "message": "sun_study.py contains magic numbers",
+          "file": "sun-study/scripts/sun_study.py",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_reliability",
+          "message": "No troubleshooting section documented",
+          "file": "sun-study/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_reliability",
+          "message": "No prerequisites/requirements documented",
+          "file": "sun-study/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_reliability",
+          "message": "No mention of error handling or validation",
+          "file": "sun-study/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        },
+        {
+          "severity": "low",
+          "category": "QUALITY",
+          "check": "quality_discoverability",
+          "message": "No '## Purpose' section",
+          "file": "sun-study/SKILL.md",
+          "line": null,
+          "occurrences": 1
+        }
+      ]
+    }
+  ],
+  "similarity": [
+    {
+      "mode": "descriptions",
+      "status": "incomplete",
+      "incomplete_scans": [
+        "collection-coverage"
+      ],
+      "pairs": [
+        {
+          "a": "bambu-print-recipes",
+          "b": "printables-entourage",
+          "class": "SIMILAR",
+          "score": 0.777,
+          "severity": "medium"
+        },
+        {
+          "a": "bambu-print-recipes",
+          "b": "stl-fit-and-repair",
+          "class": "SIMILAR",
+          "score": 0.763,
+          "severity": "medium"
+        },
+        {
+          "a": "physical-model-prep",
+          "b": "printables-entourage",
+          "class": "SIMILAR",
+          "score": 0.763,
+          "severity": "medium"
+        },
+        {
+          "a": "physical-model-prep",
+          "b": "stl-fit-and-repair",
+          "class": "SIMILAR",
+          "score": 0.756,
+          "severity": "medium"
+        }
+      ],
+      "other_findings": []
+    },
+    {
+      "mode": "full-body",
+      "status": "failed",
+      "incomplete_scans": [
+        "collection-coverage"
+      ],
+      "pairs": [
+        {
+          "a": "bambu-print-recipes",
+          "b": "stl-fit-and-repair",
+          "class": "HIGH_SIMILARITY",
+          "score": 0.919,
+          "severity": "high"
+        },
+        {
+          "a": "bambu-print-recipes",
+          "b": "physical-model-prep",
+          "class": "HIGH_SIMILARITY",
+          "score": 0.914,
+          "severity": "high"
+        },
+        {
+          "a": "physical-model-prep",
+          "b": "stl-fit-and-repair",
+          "class": "HIGH_SIMILARITY",
+          "score": 0.913,
+          "severity": "high"
+        },
+        {
+          "a": "physical-model-prep",
+          "b": "printables-entourage",
+          "class": "SIMILAR",
+          "score": 0.894,
+          "severity": "medium"
+        },
+        {
+          "a": "model-assembly-sheet",
+          "b": "physical-model-prep",
+          "class": "SIMILAR",
+          "score": 0.891,
+          "severity": "medium"
+        },
+        {
+          "a": "printables-entourage",
+          "b": "stl-fit-and-repair",
+          "class": "SIMILAR",
+          "score": 0.882,
+          "severity": "medium"
+        },
+        {
+          "a": "bambu-print-recipes",
+          "b": "printables-entourage",
+          "class": "SIMILAR",
+          "score": 0.879,
+          "severity": "medium"
+        },
+        {
+          "a": "bambu-print-recipes",
+          "b": "model-assembly-sheet",
+          "class": "SIMILAR",
+          "score": 0.874,
+          "severity": "medium"
+        },
+        {
+          "a": "model-assembly-sheet",
+          "b": "stl-fit-and-repair",
+          "class": "SIMILAR",
+          "score": 0.862,
+          "severity": "medium"
+        },
+        {
+          "a": "physical-model-prep",
+          "b": "sheet-review",
+          "class": "SIMILAR",
+          "score": 0.86,
+          "severity": "medium"
+        },
+        {
+          "a": "model-assembly-sheet",
+          "b": "printables-entourage",
+          "class": "SIMILAR",
+          "score": 0.858,
+          "severity": "medium"
+        },
+        {
+          "a": "physical-model-prep",
+          "b": "precedent-dossier",
+          "class": "SIMILAR",
+          "score": 0.83,
+          "severity": "medium"
+        },
+        {
+          "a": "precedent-dossier",
+          "b": "sheet-review",
+          "class": "SIMILAR",
+          "score": 0.828,
+          "severity": "medium"
+        },
+        {
+          "a": "sheet-review",
+          "b": "stl-fit-and-repair",
+          "class": "SIMILAR",
+          "score": 0.817,
+          "severity": "medium"
+        },
+        {
+          "a": "model-assembly-sheet",
+          "b": "precedent-dossier",
+          "class": "SIMILAR",
+          "score": 0.812,
+          "severity": "medium"
+        },
+        {
+          "a": "model-assembly-sheet",
+          "b": "sheet-review",
+          "class": "SIMILAR",
+          "score": 0.803,
+          "severity": "medium"
+        },
+        {
+          "a": "rhino-safe-capture",
+          "b": "stl-fit-and-repair",
+          "class": "SIMILAR",
+          "score": 0.799,
+          "severity": "medium"
+        },
+        {
+          "a": "bambu-print-recipes",
+          "b": "sheet-review",
+          "class": "SIMILAR",
+          "score": 0.799,
+          "severity": "medium"
+        },
+        {
+          "a": "precedent-dossier",
+          "b": "printables-entourage",
+          "class": "SIMILAR",
+          "score": 0.799,
+          "severity": "medium"
+        },
+        {
+          "a": "precedent-dossier",
+          "b": "stl-fit-and-repair",
+          "class": "SIMILAR",
+          "score": 0.798,
+          "severity": "medium"
+        },
+        {
+          "a": "printables-entourage",
+          "b": "rhino-safe-capture",
+          "class": "SIMILAR",
+          "score": 0.798,
+          "severity": "medium"
+        },
+        {
+          "a": "physical-model-prep",
+          "b": "rhino-safe-capture",
+          "class": "SIMILAR",
+          "score": 0.795,
+          "severity": "medium"
+        },
+        {
+          "a": "printables-entourage",
+          "b": "sheet-review",
+          "class": "SIMILAR",
+          "score": 0.793,
+          "severity": "medium"
+        },
+        {
+          "a": "precedent-dossier",
+          "b": "rhino-safe-capture",
+          "class": "SIMILAR",
+          "score": 0.793,
+          "severity": "medium"
+        },
+        {
+          "a": "bambu-print-recipes",
+          "b": "precedent-dossier",
+          "class": "SIMILAR",
+          "score": 0.781,
+          "severity": "medium"
+        },
+        {
+          "a": "rhino-safe-capture",
+          "b": "sheet-review",
+          "class": "SIMILAR",
+          "score": 0.775,
+          "severity": "medium"
+        },
+        {
+          "a": "bambu-print-recipes",
+          "b": "rhino-safe-capture",
+          "class": "SIMILAR",
+          "score": 0.766,
+          "severity": "medium"
+        }
+      ],
+      "other_findings": []
+    }
+  ]
+}

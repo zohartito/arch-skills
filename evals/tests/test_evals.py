@@ -233,7 +233,9 @@ class ExecutionTests(unittest.TestCase):
 class ScoreTests(unittest.TestCase):
     def setUp(self):
         self.expected = run_triggers.load_rows()
-        self.rows = [observed(r) for r in self.expected]
+        self.rows = [observed(r, cli_version="offline-test",
+                              skill_sha256=common.sha256(common.ROOT / "skills" / r["skill"] / "SKILL.md"))
+                     for r in self.expected]
 
     def test_complete_pass(self):
         self.assertEqual(0, check_triggers.verdict(check_triggers.score(self.rows), True))

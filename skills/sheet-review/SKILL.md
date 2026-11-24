@@ -24,7 +24,10 @@ Scripts live in this skill's `scripts/` folder; run commands from the skill fold
      text to an InDesign MCP tool named `execute_extend_script` (see the repository README). Pass `app_name`
      when both the release and Beta InDesign are running.
    - Without MCP (Codex, shell):
-     `<adb-mcp venv>/bin/python scripts/run_indesign_audit.py --doc NAME.indd --app "Adobe InDesign 2026 (Beta)" --out <checks>/indesign-audit.json`
+     `<adb-mcp venv>/bin/python scripts/run_indesign_audit.py --doc NAME.indd --out <checks>/indesign-audit.json`
+     It audits whichever InDesign is running. Add `--app "<name>"` only when the release and the
+     Beta are both running; the error lists the running names. Don't write a year from memory:
+     Creative Cloud replaces the apps on upgrade (2026 became 2027 in November 2026).
    - If `unsavedChanges` is true, the PDF does not represent the live layout. Say so.
 3. **PDF preflight:**
    ```bash

@@ -28,6 +28,37 @@ AUTH_ENV = {
     "CLAUDE_CODE_OAUTH_TOKEN", "CLAUDE_CODE_USE_BEDROCK", "CLAUDE_CODE_USE_VERTEX",
     "CLAUDE_CODE_USE_FOUNDRY", "ANTHROPIC_FOUNDRY_API_KEY",
 }
+_PATH_SEGMENT = r"""[^\s/\\'"`<>()\[\]{},;:!?]+"""
+_PATHS = re.compile(
+    # Consume URLs first so their path/query components cannot be mistaken for local paths.
+    r"""(?P<url>\b[A-Za-z][A-Za-z0-9+.-]*://[^\s'"`<>]+)"""
+    # Paths start at a token boundary, never inside relative paths, words or URLs.
+    r"""|(?:^|(?<=[\s'"`(\[<{=:;,]))(?P<path>"""
+    rf"(?:[A-Za-z]:[\\/]{_PATH_SEGMENT}(?:[\\/]+{_PATH_SEGMENT})*"
+    rf"|\\\\{_PATH_SEGMENT}\\{_PATH_SEGMENT}(?:\\+{_PATH_SEGMENT})*"
+    rf"|~/{_PATH_SEGMENT}(?:/+{_PATH_SEGMENT})*"
+    rf"|/+{_PATH_SEGMENT}(?:/+{_PATH_SEGMENT})+)"
+    r"[\\/]*)"
+)
+
+
+def scrub_paths(text):
+    """Redact absolute path tokens, retaining only paths within a known repository folder."""
+    if not isinstance(text, str):
+        return text
+
+    def replace(match):
+        if match["url"] is not None:
+            return match["url"]
+        path = match["path"].rstrip(".")
+        punctuation = match["path"][len(path):]
+        parts = re.split(r"[\\/]+", path)
+        for index, part in enumerate(parts[:-1]):
+            if part in {"arch-skills", ROOT.name} and parts[index + 1]:
+                return "<repo>/" + "/".join(parts[index + 1:]) + punctuation
+        return "<path>" + punctuation
+
+    return _PATHS.sub(replace, text)
 
 
 def sha256(path):

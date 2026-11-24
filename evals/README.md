@@ -119,12 +119,35 @@ are retained. This intentionally limits diagnosis of redacted competing skills.
   negative query; it is not a false trigger of the target skill.
 - Session errors and unexpected hook activity are excluded from rates and counted as errors.
   Missing observations produce `n/a`, never zero. Coverage is printed for each skill.
-- Exit **0**: all 60 unique corpus rows, no session errors, recall >=90%, false rate <=20%.
-  Exit **1**: an observed routing threshold fails, even on a partial sample.
-  Exit **2**: incomplete or invalid evidence without an observed threshold failure.
+- Exit **0**: valid source lineage, all 60 unique corpus rows, no session errors,
+  recall >=90%, false rate <=20%.
+  Exit **1**: an observed routing threshold fails, even on a partial sample, after validation.
+  Exit **2**: invalid evidence, or incomplete evidence without an observed threshold failure.
 
 The checker validates row IDs and corpus text, rejecting duplicate, unknown or mismatched
-rows. It prints failing queries for later description review. A partial sample cannot
+rows. Every result row (including session errors) must have a 64-digit hexadecimal
+`skill_sha256` and a nonblank `cli_version`. A result set must contain exactly one CLI
+version and one revision per observed skill. Hexadecimal letter case is ignored; CLI
+versions must match exactly. Missing columns, malformed hashes and mixed revisions or
+versions are invalid evidence, not routing failures.
+
+By default, each observed hash must match **this checkout's** `skills/<name>/SKILL.md`,
+using the same SHA-256 helper as the runner. Missing/unreadable current skill files or
+changed bytes prevent a current-source PASS. Re-run the evaluation after changing a
+skill, or explicitly score a coherent older result:
+
+```bash
+python3 evals/check_triggers.py evals/results/triggers-full-after-fix.csv --historical
+```
+
+`--historical` skips only the comparison with current skill bytes. It still validates
+lineage metadata, corpus identity, coverage, session errors and routing thresholds.
+Every verdict (including validation errors) is prefixed `HISTORICAL`; a historical PASS
+is not evidence for the current source. Neither mode starts Claude or requires the
+recorded CLI version to be installed. Hashes cover target SKILL.md bytes only, not scripts,
+other skill descriptions or the full runtime environment; CSV metadata is not a signed attestation.
+
+The checker prints failing queries for later description review. A partial sample cannot
 establish full-suite recall or false-trigger performance. A source-loading failure should
 be investigated before attributing it to description wording.
 
@@ -153,6 +176,52 @@ these metrics alone cannot demonstrate better task quality.
 `results/baseline-2026-11-15.md` records a deferred comparison, not measured results.
 `results/verification-2026-11-15.md` records the smoke evidence and remaining checks.
 `results/sweep-2026-11-15.md` records the full sweep, the description change it led to, and one baseline pair.
+
+## `claude plugin eval` suite
+
+`evals/plugin-eval/` holds a suite in Claude Code's own
+[plugin eval format](https://code.claude.com/docs/en/plugin-evals) for `sheet-review` and `bambu-print-recipes`:
+the 30 `triggers.csv` rows for those skills (a `tool_used: Skill` grader; negatives require zero calls in both arms)
+and six content cases graded with `regex` and `llm` graders. `.claude-plugin/plugin.json` makes the repository a plugin
+named `arch-skills` and points `experimental.evals` at that directory. It does not change the symlink install above.
+Each run is isolated by the tool: no personal settings, skills, hooks, CLAUDE.md or MCP servers load, unlike the
+trigger runner. Case files are generated; edit `plugin_eval.py`, not the Markdown:
+
+```bash
+python3 evals/plugin_eval.py build      # rewrite evals/plugin-eval/ from triggers.csv + CONTENT
+python3 evals/plugin_eval.py check      # exit 1 if the committed suite is out of date
+claude plugin eval . --tag smoke --runs 1 --model haiku --judge-model haiku \
+  --max-cost-usd 1.5 --trust-plugin --no-publish --output-dir <scratch dir>
+python3 evals/plugin_eval.py summarize <scratch dir>/aggregate-result.json \
+  --json-out evals/results/plugin-eval-<date>.json --md-out evals/results/plugin-eval-<date>.md
+```
+
+The `smoke` tag selects six cases. Without `--tag` the command runs all 36 cases, by default three runs each in two
+arms (216 agent runs) plus judge calls: that is a sweep, and it spends quota. The judge defaults to Haiku; the agent
+model defaults to the configured one. The tool's raw `aggregate-result.json` contains prompts, replies and local
+paths, so only the summarized JSON is committed. See `results/plugin-eval-2026-11-15.md`.
+
+## SkillEvaluator static checks
+
+[NVIDIA SkillEvaluator](https://github.com/NVIDIA/SkillEvaluator) (Apache-2.0, Python 3.12+) gives each skill an
+independent quality score. Install it in a throwaway virtual environment, never globally. Keyless Tier 1, without the
+SkillSpector security scan (it downloads a scanner) or the dependency audit; the PII check uses a local `gitleaks`:
+
+```bash
+python3.13 -m venv /tmp/se && /tmp/se/bin/pip install "skillevaluator[tier2]"
+for s in skills/*/; do /tmp/se/bin/skillevaluator tier1 "$s" --no-llm \
+  --checks schema,version,pii,license,code-integrity,unicode,quality,lint -r json -o "/tmp/se-out/$(basename "$s")"; done
+# overlap between skills, with local Ollama embeddings (no external calls):
+SKILL_EVAL_EMBEDDING_PROVIDER=openai-compatible SKILL_EVAL_EMBEDDING_BASE_URL=http://127.0.0.1:11434/v1 \
+SKILL_EVAL_EMBEDDING_MODEL=nomic-embed-text SKILL_EVAL_EMBEDDING_API_KEY=local-no-key \
+  /tmp/se/bin/skillevaluator similarity-check skills -r json -o /tmp/se-sim
+python3 evals/summarize_skillevaluator.py --tier1 /tmp/se-out/*/skillevaluator-tier1.json \
+  --similarity descriptions=/tmp/se-sim/skillevaluator-similarity.json \
+  --json-out evals/results/skillevaluator-<date>.json --md-out evals/results/skillevaluator-<date>.md
+```
+
+Tier 2 chat checks, the rubric and Tier 3 live runs need a model provider and were not run. See
+`results/skillevaluator-2026-11-15.md`.
 
 ## Scope limits
 
