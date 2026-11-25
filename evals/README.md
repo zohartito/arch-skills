@@ -229,6 +229,13 @@ arms (216 agent runs) plus judge calls: that is a sweep, and it spends quota. Th
 model defaults to the configured one. The tool's raw `aggregate-result.json` contains prompts, replies and local
 paths, so only the summarized JSON is committed. See `results/plugin-eval-2026-11-15.md`.
 
+`summarize` also accepts an already-summarized JSON. Besides mean Δ it adds `pairedOutcomes`: per case, G (failed
+without the skill, passed with it), R (regression: passed without, failed with), F (failed both) or H (passed both),
+counted separately for content and routing cases. A case counts only with exactly one run per arm, no error, abort or
+skipped grading, and boolean outcomes; content cases also need the same scored graders in both arms. Every other case
+is listed with its reason, and coverage is observed / eligible. For the 2026-11-15 smoke JSON: content 2/2 observed,
+G=2; routing 2/4 observed (G=1, H=1), with the two turn-cap runs excluded.
+
 ## SkillEvaluator static checks
 
 [NVIDIA SkillEvaluator](https://github.com/NVIDIA/SkillEvaluator) (Apache-2.0, Python 3.12+) gives each skill an

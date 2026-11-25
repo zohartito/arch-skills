@@ -153,7 +153,8 @@ def redact(result):
                 "costUsd": entry.get("costUsd"), "judgeCostUsd": entry.get("judgeCostUsd"),
                 "durationSeconds": entry.get("durationSeconds"), "error": scrub(entry.get("error")),
                 "aborted": bool(entry.get("aborted")), "skippedPaidGraders": bool(entry.get("skippedPaidGraders")),
-                "graders": [{"name": g.get("name"), "type": types.get(g.get("name")), "passed": g.get("passed"),
+                "graders": [{"name": g.get("name"), "type": types.get(g.get("name")) or g.get("type"),
+                             "passed": g.get("passed"),
                              "scored": g.get("scored", True), "judgeVotes": g.get("judgeVotes")}
                             for g in entry.get("graders") or []]}
     cases = []
@@ -169,12 +170,91 @@ def redact(result):
             "partialReason", "aggregates")
     return {**{k: result.get(k) for k in keep if k in result},
             "suite": {**{k: suite[k] for k in keep_suite if k in suite},
-                      "plugins": [p.get("name") for p in suite.get("plugins") or []]},
+                      "plugins": [p.get("name") if isinstance(p, dict) else p for p in suite.get("plugins") or []]},
             "cases": cases}
 
 
 def fmt(value, digits=2):
     return "n/a" if value is None else f"{value:.{digits}f}"
+
+
+TRANSITIONS = {(False, True): "G", (True, False): "R", (False, False): "F", (True, True): "H"}
+
+
+def pair_problem(case, content):
+    """Return (kind, reason) when a case is not one valid with/without pair, else None."""
+    arms = case.get("arms") or {}
+    counts = {arm: len(arms.get(arm) or []) for arm in ("with", "without")}
+    if 0 in counts.values():
+        return "unpaired", "missing arm: " + ", ".join(a for a, n in counts.items() if n == 0)
+    if any(n > 1 for n in counts.values()):
+        return "unpaired", f"ambiguous repeats: {counts['with']} with / {counts['without']} without runs"
+    runs = {arm: arms[arm][0] for arm in counts}
+    for arm, run in runs.items():
+        if run.get("error"):
+            return "invalid", f"{arm} error: {run['error']}"
+        if run.get("aborted"):
+            return "invalid", f"{arm} aborted"
+        if run.get("skippedPaidGraders"):
+            return "invalid", f"{arm} skipped grading"
+        if not isinstance(run.get("passed"), bool):
+            return "invalid", f"{arm} outcome not boolean: {run.get('passed')!r}"
+    if content:
+        scored = {}
+        for arm, run in runs.items():
+            graders = [g for g in run.get("graders") or [] if g.get("scored", True)]
+            if not graders or any(not isinstance(g.get("passed"), bool) for g in graders):
+                return "invalid", f"{arm} grading incomplete"
+            scored[arm] = sorted((str(g.get("name")), str(g.get("type"))) for g in graders)
+        if scored["with"] != scored["without"]:
+            return "invalid", "scored graders differ between arms"
+    return None
+
+
+def paired_outcomes(redacted):
+    """Classify each case as G (gain), R (regression), F (fails both), H (holds both) from one run per arm."""
+    cases = redacted.get("cases") or []
+    names = [c.get("name") for c in cases]
+    groups = {g: {"eligible": 0, "observed": 0, "G": 0, "R": 0, "F": 0, "H": 0, "excluded": []}
+              for g in ("content", "routing")}
+    seen = set()
+    for case in cases:
+        name = case.get("name")
+        content = "-content-" in str(name)
+        group = groups["content" if content else "routing"]
+        if name in seen:
+            continue
+        seen.add(name)
+        group["eligible"] += 1
+        dupes = names.count(name)
+        problem = ("unpaired", f"duplicate case id ({dupes} entries)") if dupes > 1 else pair_problem(case, content)
+        if problem:
+            group["excluded"].append({"case": name, "kind": problem[0], "reason": problem[1]})
+            continue
+        group["observed"] += 1
+        group[TRANSITIONS[case["arms"]["without"][0]["passed"], case["arms"]["with"][0]["passed"]]] += 1
+    for group in groups.values():
+        n = group["observed"]
+        group["coverage"] = n / group["eligible"] if group["eligible"] else None
+        group["net"] = group["G"] - group["R"]
+        group["ppChange"] = 100 * group["net"] / n if n else None
+    return groups
+
+
+def paired_markdown(groups):
+    lines = ["", "## Paired outcomes", "",
+             "One valid run per arm. G: failed without the skill, passed with it. R (regression): passed without, "
+             "failed with. F: failed both. H: passed both. Pass-rate change is (G-R)/observed in percentage points.",
+             "", "| Group | Eligible | Observed | Coverage | G | R | F | H | G-R | Pass-rate change, pp |",
+             "|---|---|---|---|---|---|---|---|---|---|"]
+    for name, g in groups.items():
+        lines.append(f"| {name} | {g['eligible']} | {g['observed']} | {fmt(g['coverage'])} | {g['G']} | {g['R']} | "
+                     f"{g['F']} | {g['H']} | {g['net']} | {fmt(g['ppChange'], 1)} |")
+    excluded = [(name, e) for name, g in groups.items() for e in g["excluded"]]
+    if excluded:
+        lines += ["", "Excluded from paired counts:"]
+        lines += [f"- {name} / {e['case']} ({e['kind']}): {e['reason']}" for name, e in excluded]
+    return lines
 
 
 def summary_markdown(redacted, command):
@@ -202,16 +282,17 @@ def summary_markdown(redacted, command):
             f"mean Δ {fmt(agg.get('meanDelta'))}; cases passed {agg.get('casesPassed')}/{agg.get('casesTotal')}; "
             f"estimated list-price cost ${fmt(redacted.get('costUsd'), 4)}; "
             f"{fmt(redacted.get('durationSeconds'), 0)} s; partial: {redacted.get('partial')}.", ""]
-    return "\n".join(head + lines) + "\n"
+    return "\n".join(head + lines + paired_markdown(paired_outcomes(redacted))) + "\n"
 
 
 def summarize(source, json_out, md_out, command):
     redacted = redact(json.loads(Path(source).read_text()))
+    redacted["pairedOutcomes"] = paired_outcomes(redacted)
     for out in (json_out, md_out):
         if Path(out).exists():
             raise SystemExit(f"{out} exists; pass a new name.")
     Path(json_out).write_text(json.dumps(redacted, indent=2) + "\n")
-    Path(md_out).write_text(summary_markdown(redacted, command))
+    Path(md_out).write_text(summary_markdown(redacted, command), encoding="utf-8")
     return 0
 
 
