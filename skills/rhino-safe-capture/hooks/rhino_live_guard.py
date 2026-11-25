@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""PreToolUse guard: stop Rhino MCP calls from silently changing the live document.
+"""Partial regex PreToolUse guard for recognized live-document mutations.
 
-Denies (with instructions the agent can act on) when a call would mutate the user's open
-Rhino document: mutating script code, importing into or clearing the live doc, running
+Denies (with instructions the agent can act on) when a call matches a known mutation pattern: mutating script code, importing into or clearing the live doc, running
 save/purge/delete commands, or saving over an existing file. Allows read-only scripts,
 work in a slot the agent spawned (`slot` argument), and live edits the user explicitly
 approved — marked by the comment `rhino-live-edit: user-approved` in the script.
+Aliases, direct imports and indirect calls can bypass the patterns. An allow response
+is not proof of read-only behavior; review scripts and prefer a spawned slot when uncertain.
 """
 import json
 import re

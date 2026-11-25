@@ -14,8 +14,11 @@ PDF preflight use PyMuPDF from `requirements-arch-tools.txt`.
 ```bash
 python3 -m unittest discover -s evals/tests -v
 python3 evals/run_triggers.py --limit 4 --dry-run
-python3 evals/run_triggers.py --limit 2
-python3 evals/check_triggers.py
+# Fresh output directory for this invocation.
+# Only the live trigger run spends subscription quota; check_triggers.py scores the CSV locally.
+eval_run_dir=$(mktemp -d "${TMPDIR:-/tmp}/arch-evals.XXXXXX")
+python3 evals/run_triggers.py --limit 2 --output "$eval_run_dir/smoke.csv"
+python3 evals/check_triggers.py "$eval_run_dir/smoke.csv"  # expected INCOMPLETE for 2/60 rows
 python3 evals/make_fixture.py --check
 python3 evals/run_baseline.py --dry-run
 ```
@@ -33,12 +36,16 @@ They spend subscription quota. A complete sweep starts up to 60 new sessions, in
 the two smoke queries again. The baseline starts up to two more.
 
 ```bash
-python3 evals/run_triggers.py --limit 60 --workers 1 --output evals/results/triggers-full.csv
-python3 evals/run_baseline.py --run --output evals/results/baseline-pair.md
+eval_run_dir=$(mktemp -d "${TMPDIR:-/tmp}/arch-evals.XXXXXX")
+python3 evals/run_triggers.py --limit 60 --workers 1 --output "$eval_run_dir/triggers-full.csv"
+python3 evals/check_triggers.py "$eval_run_dir/triggers-full.csv"
+python3 evals/run_baseline.py --run --output "$eval_run_dir/baseline-pair.md"
 ```
 
-Score a full result explicitly with `python3 evals/check_triggers.py evals/results/triggers-full.csv`.
-The default checker selects the most recently modified `triggers-*.csv`.
+The checker requires an explicit result CSV; checkout modification times do not select evidence.
+Committed `evals/results/triggers-full.csv` and `evals/results/baseline-pair.md` are historical evidence,
+not output destinations for a new run. To score that historical CSV, use
+`python3 evals/check_triggers.py evals/results/triggers-full.csv`.
 Results default to UTC-dated names. Existing result files are never overwritten; pass
 a new `--output` for another run. The session cap is per invocation, not a lifetime budget.
 

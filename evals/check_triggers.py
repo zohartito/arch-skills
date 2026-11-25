@@ -81,7 +81,7 @@ def verdict(metrics, complete):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("results", type=Path, nargs="?")
+    parser.add_argument("results", type=Path, help="explicit result CSV to score (never selected by file mtime)")
     parser.add_argument("--input", type=Path, default=INPUT)
     parser.add_argument("--historical", action="store_true",
                         help="score coherent recorded revisions without comparing current skill bytes")
@@ -89,11 +89,6 @@ def main(argv=None):
     label = "HISTORICAL " if args.historical else ""
     try:
         path = args.results
-        if path is None:
-            candidates = list((ROOT / "evals/results").glob("triggers-*.csv"))
-            if not candidates:
-                raise ValueError("No trigger result CSV found.")
-            path = max(candidates, key=lambda p: p.stat().st_mtime_ns)
         expected = load_rows(args.input)
         rows = read_results(path, expected, historical=args.historical)
         metrics = score(rows)

@@ -54,11 +54,19 @@ def is_neutral(hex_code: str) -> bool:
 
 
 def load_palette(spec: str | None) -> list[str]:
-    if not spec:
+    if spec is None:
         return []
     source = Path(spec).expanduser()
-    text = source.read_text(errors="ignore") if source.exists() else spec
-    return sorted({f"#{code.upper()}" for code in HEX_PATTERN.findall(text)})
+    if source.is_file():
+        text = source.read_text(errors="ignore")
+    elif re.fullmatch(r"\s*#[0-9A-Fa-f]{6}(?:\s*,\s*#[0-9A-Fa-f]{6})*\s*", spec):
+        text = spec
+    else:
+        raise ValueError("palette must be an existing file or comma-separated #RRGGBB codes")
+    colors = sorted({f"#{code.upper()}" for code in HEX_PATTERN.findall(text)})
+    if not colors:
+        raise ValueError("palette contains no #RRGGBB colors")
+    return colors
 
 
 class Report:
@@ -311,7 +319,10 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
     document = fitz.open(args.pdf)
     previous = fitz.open(args.compare) if args.compare else None
-    palette = load_palette(args.palette)
+    try:
+        palette = load_palette(args.palette)
+    except ValueError as exc:
+        parser.error(str(exc))
     expect = parse_size(args.expect_size)
     page_numbers = [int(part) for part in args.pages.split(",")] if args.pages else range(1, document.page_count + 1)
 

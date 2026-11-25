@@ -4,7 +4,7 @@ brass cut lengths, a 50 mm check bar, orientation arrows and notes. Also writes 
 
     placement_sheet.py sheet.json
 
-sheet.json (paths relative to the JSON file):
+sheet.json (paths contained beneath the JSON file's folder; no symlinks or replacements):
 {
   "title": "GARDEN PIECES PLACEMENT", "scale_note": "1/8\\" = 1'-0\\"",
   "page_mm": [215.9, 279.4],                 # letter; tabloid = [279.4, 431.8]
@@ -44,16 +44,33 @@ from matplotlib.backends.backend_pdf import PdfPages  # noqa: E402
 MARGIN = 8.0          # mm kept clear at the page edge (printers don't print to the edge)
 
 
+def checked_path(root: Path, value: str) -> Path:
+    relative = Path(value)
+    if not value or relative.is_absolute() or ".." in relative.parts or any(c in value for c in "\\:\0\r\n"):
+        raise ValueError("specification path must stay relative to its selected root")
+    path = root / relative
+    if any(p.is_symlink() for p in (path, *path.parents)) or not path.resolve().is_relative_to(root.resolve()):
+        raise ValueError("specification path must be contained and must not use symlinks")
+    return path
+
+
 def main(spec_path: str) -> int:
-    spec_path = Path(spec_path).resolve()
-    root = spec_path.parent
-    spec = json.loads(spec_path.read_text())
+    source = Path(spec_path).resolve()
+    root = source.parent
+    spec = json.loads(source.read_text())
+    out = checked_path(root, spec.get("out", "placement-1to1.pdf"))
+    cut_csv = out.with_name(out.stem + "_post-cut-list.csv")
+    outputs = [out, out.with_suffix(".png")] + ([cut_csv] if spec.get("posts") else [])
+    for target in outputs:
+        checked_path(root, str(target.relative_to(root)))
+        if target.exists():
+            raise FileExistsError(f"output already exists: {target.name}; choose a new path")
     page_w, page_h = spec.get("page_mm", [215.9, 279.4])
-    shifts = json.loads((root / spec["placements"]).read_text()) if spec.get("placements") else {}
+    shifts = json.loads(checked_path(root, spec["placements"]).read_text()) if spec.get("placements") else {}
 
     parts = []
     for p in spec.get("parts", []):
-        mesh = trimesh.load(root / p["stl"], force="mesh")
+        mesh = trimesh.load(checked_path(root, p["stl"]), force="mesh")
         key = p.get("key", Path(p["stl"]).stem)
         mesh.apply_translation(-np.array(p.get("shift", shifts.get(key, (0, 0, 0))), float))
         parts.append((p, mesh))
@@ -62,7 +79,7 @@ def main(spec_path: str) -> int:
     if spec.get("posts"):
         ps = spec["posts"]
         unit = ps.get("mmft", 1.0) if ps.get("units", "mm") == "ft" else 1.0
-        for row in csv.DictReader(open(root / ps["csv"])):
+        for row in csv.DictReader(open(checked_path(root, ps["csv"]))):
             above = float(row[ps["above"]])
             cut = above + ps.get("socket_mm", 0.0) + ps.get("seat_offset_mm", 0.0)
             posts.append((row[ps["name"]], float(row[ps["x"]]) * unit, float(row[ps["y"]]) * unit, above, cut))
@@ -116,14 +133,14 @@ def main(spec_path: str) -> int:
         ax.annotate(arrow["text"], xy=(xr, tip), xytext=(xr, tip - 20 if up else tip + 20), fontsize=6, ha="center",
                     arrowprops=dict(arrowstyle="->", lw=0.8))
 
-    out = root / spec.get("out", "placement-1to1.pdf")
-    with PdfPages(out) as pdf:
+    with out.open("xb") as handle, PdfPages(handle) as pdf:
         pdf.savefig(fig)
-    fig.savefig(out.with_suffix(".png"), dpi=110)
+    with out.with_suffix(".png").open("xb") as handle:
+        fig.savefig(handle, format="png", dpi=110)
+    plt.close(fig)
 
     if posts:
-        cut_csv = out.with_name(out.stem + "_post-cut-list.csv")
-        with cut_csv.open("w", newline="") as fh:
+        with cut_csv.open("x", newline="") as fh:
             w = csv.writer(fh)
             w.writerow(["post", "above_base_mm", "cut_mm", "x_mm", "y_mm"])
             for name, x, y, above, cut in sorted(posts):

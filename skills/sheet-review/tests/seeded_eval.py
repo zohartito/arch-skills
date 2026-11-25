@@ -21,25 +21,31 @@ def plant_defects(source: Path, seeded: Path) -> list[dict]:
     document = fitz.open(source)
     page = document[0]
     width_in = page.rect.width / POINTS_PER_INCH
+    height_in = page.rect.height / POINTS_PER_INCH
+    if min(width_in, height_in) < 4:
+        raise ValueError("seeded evaluation requires a page at least 4 inches wide and tall")
     x0 = width_in * 0.45
     answer_key = []
 
-    stray_start, stray_end = fitz.Point(x0 * 72, 6 * 72), fitz.Point((x0 + 1.5) * 72, 7.2 * 72)
+    y0, y1 = height_in * 0.25, height_in * 0.30
+    stray_start, stray_end = fitz.Point(x0 * 72, y0 * 72), fitz.Point((x0 + 1.5) * 72, y1 * 72)
     page.draw_line(stray_start, stray_end, color=(0, 0, 0), width=0.6)
-    answer_key.append({"defect": "stray-line", "check": "changed-region", "bbox_in": [x0, 6.0, x0 + 1.5, 7.2]})
+    answer_key.append({"defect": "stray-line", "check": "changed-region", "bbox_in": [x0, y0, x0 + 1.5, y1]})
 
     for offset in (0, 0.5):
-        swatch = fitz.Rect((x0 + offset) * 72, 9 * 72, (x0 + offset + 0.3) * 72, 9.3 * 72)
+        swatch = fitz.Rect((x0 + offset) * 72, height_in * 0.4 * 72, (x0 + offset + 0.3) * 72,
+                          (height_in * 0.4 + 0.3) * 72)
         page.draw_rect(swatch, color=None, fill=(0.75, 0.19, 0.48))
     answer_key.append({"defect": "legend-swatch-without-symbols", "check": "swatch-only-color", "match": "#BF307A"})
 
-    page.draw_rect(fitz.Rect(x0 * 72, 10 * 72, (x0 + 2) * 72, 11 * 72), color=None, fill=(0.2, 0.8, 0.6))
+    page.draw_rect(fitz.Rect(x0 * 72, height_in * 0.5 * 72, (x0 + 2) * 72, (height_in * 0.5 + 1) * 72),
+                   color=None, fill=(0.2, 0.8, 0.6))
     answer_key.append({"defect": "off-palette-fill", "check": "off-palette-fills", "match": "#33CC99"})
 
-    page.insert_text(fitz.Point(x0 * 72, 12 * 72), "label set too small", fontsize=3)
+    page.insert_text(fitz.Point(x0 * 72, height_in * 0.75 * 72), "label set too small", fontsize=3)
     answer_key.append({"defect": "tiny-text", "check": "small-text", "match": "3.0 pt"})
 
-    page.insert_text(fitz.Point(x0 * 72, 12.5 * 72), "AREA TBD", fontsize=10)
+    page.insert_text(fitz.Point(x0 * 72, height_in * 0.85 * 72), "AREA TBD", fontsize=10)
     answer_key.append({"defect": "placeholder-text", "check": "placeholder-text", "match": "TBD"})
 
     document.save(seeded)

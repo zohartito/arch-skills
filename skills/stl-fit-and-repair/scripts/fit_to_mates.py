@@ -7,7 +7,7 @@
 Method (roofs onto printed walls, Oct 5 2026): put part and mates in one model frame, grow the mates by the
 clearance, subtract them from the part, drop crumbs, export safely, then check:
   - overlap with the printed mates = 0 and with mates + clearance = 0
-  - drop-on path: overlap when the part is raised 0.05 .. 30 mm stays 0 (it can be lowered straight down)
+  - drop-on path: the continuous swept volume from seated to +30 mm has <0.01 mm3 overlap
   - still one body, watertight after reload
 Use the STLs that were actually printed as mates, not a newer regeneration: the fit is against the physical part.
 
@@ -28,6 +28,18 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import meshkit as mk  # noqa: E402
 import manifold3d as mf  # noqa: E402
+
+
+def swept_volume(part, height=30.0):
+    """Solid swept along +Z, preserving concavities and holes in its XY footprint.
+
+    Every newly occupied point crosses the original boundary during translation.
+    Union that boundary's triangular prisms with the initial solid; vertical faces
+    yield empty (coplanar) hulls. This covers every height, not just sampled poses.
+    """
+    triangles = mk.from_manifold(part).triangles
+    shift = np.array([0.0, 0.0, height])
+    return mk.union([part] + [mf.Manifold.hull_points(np.vstack([tri, tri + shift])) for tri in triangles])
 
 
 def main(argv=None) -> int:
@@ -70,11 +82,11 @@ def main(argv=None) -> int:
 
     overlap = (final ^ mates).volume()
     overlap_grown = (final ^ grown).volume()
-    path = {dz: (final.translate((0, 0, dz)) ^ mates).volume() for dz in (0.05, 0.3, 1, 3, 10, 30)}
+    path_overlap = (swept_volume(final) ^ mates).volume()
     print(f"overlap with printed mates {overlap:.4f} mm3; with mates + {args.clear} mm {overlap_grown:.4f} mm3")
-    print("drop-on path (overlap when raised): " + ", ".join(f"+{dz} mm {v:.3f}" for dz, v in path.items()))
+    print(f"drop-on path (continuous sweep 0 to +30 mm): {path_overlap:.4f} mm3 overlap")
     print("export:", report)
-    ok = (overlap < 0.01 and max(path.values()) < 0.01 and report["watertight"] and report["bad_edges"] == 0
+    ok = (overlap < 0.01 and path_overlap < 0.01 and report["watertight"] and report["bad_edges"] == 0
           and report["bodies"] == 1)
     print("PASS" if ok else "CHECK FAILED: see numbers above (bodies must be 1, overlaps ~0)")
     return 0 if ok else 1
