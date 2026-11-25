@@ -5,17 +5,18 @@ import argparse
 from collections import Counter
 import csv
 from pathlib import Path
+import re
 import sys
 
-from eval_common import NAMESPACE, ROOT, SKILLS, public_skill
+from eval_common import NAMESPACE, ROOT, SKILLS, public_skill, sha256
 from run_triggers import INPUT, load_rows
 
 
-def read_results(path, expected):
+def read_results(path, expected, *, historical=False):
     with Path(path).open(newline="") as stream:
         rows = list(csv.DictReader(stream))
     by_id = {str(r["row_id"]): r for r in expected}
-    seen = set()
+    seen, versions, revisions = set(), set(), {}
     for row in rows:
         row_id = row.get("row_id")
         if row_id not in by_id or row_id in seen:
@@ -26,6 +27,29 @@ def read_results(path, expected):
                 raise ValueError("Results do not match the input corpus.")
         if row.get("repository_skill_loaded") not in {"0", "1"} or not row.get("status"):
             raise ValueError("Results lack required observation fields.")
+        skill = row["skill"]
+        name = public_skill(skill)
+        digest = row.get("skill_sha256") or ""
+        if not re.fullmatch(r"[0-9a-fA-F]{64}", digest):
+            raise ValueError(f"Missing or invalid skill_sha256 for {name}.")
+        digest = digest.lower()
+        if revisions.setdefault(skill, digest) != digest:
+            raise ValueError(f"Mixed skill revisions for {name}.")
+        version = row.get("cli_version") or ""
+        if not version.strip():
+            raise ValueError("Results lack a nonempty cli_version on every row.")
+        versions.add(version)
+    if len(versions) != 1:
+        raise ValueError("Results require exactly one nonempty cli_version.")
+    if not historical:
+        for skill, digest in revisions.items():
+            try:
+                current = sha256(ROOT / "skills" / skill / "SKILL.md")
+            except OSError:
+                raise ValueError(f"Cannot read current SKILL.md for {public_skill(skill)}.") from None
+            if digest != current:
+                raise ValueError(f"Source revision mismatch for {public_skill(skill)}; "
+                                 "rerun current skills or use --historical for old-source scoring.")
     return rows
 
 
@@ -57,18 +81,16 @@ def verdict(metrics, complete):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("results", type=Path, nargs="?")
+    parser.add_argument("results", type=Path, help="explicit result CSV to score (never selected by file mtime)")
     parser.add_argument("--input", type=Path, default=INPUT)
+    parser.add_argument("--historical", action="store_true",
+                        help="score coherent recorded revisions without comparing current skill bytes")
     args = parser.parse_args(argv)
+    label = "HISTORICAL " if args.historical else ""
     try:
         path = args.results
-        if path is None:
-            candidates = list((ROOT / "evals/results").glob("triggers-*.csv"))
-            if not candidates:
-                raise ValueError("No trigger result CSV found.")
-            path = max(candidates, key=lambda p: p.stat().st_mtime_ns)
         expected = load_rows(args.input)
-        rows = read_results(path, expected)
+        rows = read_results(path, expected, historical=args.historical)
         metrics = score(rows)
         print("skill                  observed  positive  recall     negative  false rate  errors")
         for m in metrics:
@@ -88,10 +110,10 @@ def main(argv=None):
             if (row["should_trigger"] == "1" and not hit) or (row["should_trigger"] == "0" and false):
                 print(f"Finding row {row['row_id']} ({row['skill']}): {row['query']} -> {public_skill(row['first_skill']) or '(none)'}")
         code = verdict(metrics, len(rows) == len(expected))
-        print({0: "PASS: full suite meets thresholds", 1: "FAIL: observed routing threshold", 2: "INCOMPLETE: more usable evidence required"}[code])
+        print(label + {0: "PASS: full suite meets thresholds", 1: "FAIL: observed routing threshold", 2: "INCOMPLETE: more usable evidence required"}[code])
         return code
     except (ValueError, OSError) as exc:
-        print(f"ERROR: {exc if isinstance(exc, ValueError) else type(exc).__name__}", file=sys.stderr)
+        print(f"{label}ERROR: {exc if isinstance(exc, ValueError) else type(exc).__name__}", file=sys.stderr)
         return 2
 
 

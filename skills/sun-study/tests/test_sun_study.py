@@ -39,6 +39,18 @@ def test_sun_vector_points_at_sun():
     assert sample.vector[1] < 0  # winter noon sun is due south (-Y)
 
 
+@pytest.mark.parametrize("start,end,step", [(8, 16, 70), (9, 16, 45), (8, 16, 600)])
+def test_nondividing_timestep_is_rejected(start, end, step):
+    with pytest.raises(SystemExit, match="divide"):
+        sun_study.timestep_hours(start, end, step)
+
+
+def test_dividing_timestep_covers_exact_window():
+    hours = sun_study.timestep_hours(8, 16, 15)
+    assert len(hours) * 15 / 60 == 8
+    assert hours[0] == 8.125 and hours[-1] == 15.875
+
+
 def east_west_wall(height, length=200.0, thickness=0.2):
     """Wall along X, centred on y=0, standing on z=0."""
     wall = trimesh.creation.box(extents=(length, thickness, height))
@@ -142,6 +154,74 @@ def test_off_layer_objects_skipped_unless_requested(tmp_path):
     assert mesh is None and stats.objects_off_layer_skipped == 1
     mesh, stats, _ = sun_study.load_context(path, None, None, include_off_layers=True)
     assert mesh is not None and stats.objects_meshed == 1
+
+
+def write_block_3dm(path: Path, *, member_visible=True, member_layer_visible=False, nested=False):
+    """A visible block instance containing a box; its layer is off by default."""
+    model = rhino3dm.File3dm()
+    model.Settings.ModelUnitSystem = rhino3dm.UnitSystem.Meters
+    for name, visible in (("Visible", True), ("Off", member_layer_visible)):
+        layer = rhino3dm.Layer()
+        layer.Name = name
+        layer.Visible = visible
+        model.Layers.Add(layer)
+    box = trimesh.creation.box()
+    mesh = rhino3dm.Mesh()
+    for x, y, z in box.vertices:
+        mesh.Vertices.Add(float(x), float(y), float(z))
+    for a, b, c in box.faces:
+        mesh.Faces.AddFace(int(a), int(b), int(c))
+    member = rhino3dm.ObjectAttributes()
+    member.LayerIndex = 1
+    index = model.InstanceDefinitions.Add("Block", "", "", "", rhino3dm.Point3d(0, 0, 0), (mesh,), (member,))
+    member_id = model.InstanceDefinitions[index].GetObjectIds()[0]
+    member_object = next(obj for obj in model.Objects if obj.Attributes.Id == member_id)
+    # Set visibility after Add: the definition member's hidden state then survives saving (SKL-08).
+    member_object.Attributes.Visible = member_visible
+    instance = rhino3dm.InstanceReference(model.InstanceDefinitions[index].Id, rhino3dm.Transform.Identity())
+    attributes = rhino3dm.ObjectAttributes()
+    attributes.LayerIndex = 0
+    if nested:
+        index = model.InstanceDefinitions.Add("Outer", "", "", "", rhino3dm.Point3d(0, 0, 0),
+                                              (instance,), (attributes,))
+        instance = rhino3dm.InstanceReference(model.InstanceDefinitions[index].Id, rhino3dm.Transform.Identity())
+    model.Objects.AddInstanceObject(instance, attributes)
+    assert model.Write(str(path), 8)
+
+
+def test_skl08_off_layer_block_members_cast_no_shade(tmp_path):
+    path = tmp_path / "block_off_layer.3dm"
+    write_block_3dm(path)
+    mesh, stats, _ = sun_study.load_context(path, None, None)
+    assert mesh is None, "a block member on an off layer must not cast shade"
+    assert stats.block_instances == 1 and stats.objects_off_layer_skipped == 1 and stats.warnings
+    mesh, stats, _ = sun_study.load_context(path, None, None, include_off_layers=True)
+    assert mesh is not None and len(mesh.faces) == 12
+
+
+@pytest.mark.parametrize("nested", [False, True], ids=["direct", "nested"])
+@pytest.mark.parametrize("include_off_layers", [False, True], ids=["default", "include-off-layers"])
+def test_skl08_saved_hidden_block_members_cast_no_shade(tmp_path, nested, include_off_layers):
+    path = tmp_path / "block_hidden_member.3dm"
+    write_block_3dm(path, member_visible=False, member_layer_visible=True, nested=nested)
+    mesh, stats, model = sun_study.load_context(path, None, None, include_off_layers=include_off_layers)
+    members = [obj for obj in model.Objects if isinstance(obj.Geometry, rhino3dm.Mesh)]
+    assert len(members) == 1
+    member = members[0]
+    assert member.Attributes.IsInstanceDefinitionObject
+    assert not member.Attributes.Visible
+    assert model.Layers[member.Attributes.LayerIndex].Visible
+    assert mesh is None, "a saved hidden block member must not contribute its 12 triangles"
+    assert stats.triangles == 0
+    assert stats.block_instances == (2 if nested else 1)
+    assert stats.objects_hidden_skipped == 1 and stats.objects_off_layer_skipped == 0
+    assert any("Skipped 1 hidden object(s)" in warning for warning in stats.warnings)
+
+    member.Attributes.Visible = True
+    assert model.Write(str(path), 8)
+    mesh, stats, _ = sun_study.load_context(path, None, None, include_off_layers=include_off_layers)
+    assert mesh is not None and len(mesh.faces) == stats.triangles == 12
+    assert stats.objects_hidden_skipped == stats.objects_off_layer_skipped == 0
 
 
 def test_grid_from_layer_closed_curve(tmp_path):

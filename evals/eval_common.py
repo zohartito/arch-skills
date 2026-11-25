@@ -20,8 +20,8 @@ NAMESPACE = "arch-eval"
 PUBLIC_SKILLS = {p.parent.name for p in (ROOT / "skills").glob("*/SKILL.md")}
 TOKEN_KEYS = ("input_tokens", "output_tokens", "cache_creation_input_tokens", "cache_read_input_tokens")
 LIMIT_PATTERN = re.compile(
-    r"usage.limit|rate.limit|hit.{0,15}limit|reached.{0,25}limit|weekly.limit|"
-    r"limit.{0,30}reset|out of.{0,15}(usage|credits)|insufficient.quota", re.I
+    r"\b(?:usage|rate)[ _-]limit(?:s)?\b|\byou(?:'ve| have) hit your limit\b|"
+    r"\bout of (?:usage|credits)\b|\binsufficient[ _-]quota\b", re.I
 )
 AUTH_ENV = {
     "ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_BASE_URL",
@@ -215,10 +215,20 @@ def parse_stream(stdout, stderr="", *, work=None, returncode=0, timed_out=False,
     usage = (result or {}).get("usage") or {}
     counts = {key: usage.get(key, "") for key in TOKEN_KEYS}
     total = sum(counts.values()) if all(isinstance(v, (int, float)) for v in counts.values()) else ""
-    # Detect quota messages only in result/error/assistant text, not echoed skill instructions.
-    error_text = stderr + "\n" + "\n".join(json.dumps(e) for e in events
-                                            if e.get("type") in {"result", "assistant"})
-    limited = bool(LIMIT_PATTERN.search(error_text))
+    # Successful prose is evidence, not an error message. Prefer explicit error codes;
+    # use narrow text matching only on failed results/errors or failed-process stderr.
+    succeeded = result is not None and not result.get("is_error") and result.get("subtype") == "success" and not returncode
+    errors = [e for e in events if e.get("type") == "error" or e.get("is_error") or e.get("error")
+              or str(e.get("subtype", "")).startswith("error")]
+    quota_codes = {"rate_limit", "rate_limit_error", "usage_limit", "insufficient_quota"}
+    structured_limit = any(
+        (e["error"].get("type") in quota_codes or e["error"].get("code") in quota_codes)
+        if isinstance(e.get("error"), dict) else e.get("error") in quota_codes
+        for e in errors)
+    error_text = "\n".join(json.dumps(e) for e in errors)
+    if returncode or result is None:
+        error_text += "\n" + stderr
+    limited = not succeeded and (structured_limit or bool(LIMIT_PATTERN.search(error_text)))
     if limited:
         status = "usage_limit"
     elif timed_out:

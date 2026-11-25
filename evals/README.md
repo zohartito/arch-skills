@@ -14,8 +14,11 @@ PDF preflight use PyMuPDF from `requirements-arch-tools.txt`.
 ```bash
 python3 -m unittest discover -s evals/tests -v
 python3 evals/run_triggers.py --limit 4 --dry-run
-python3 evals/run_triggers.py --limit 2
-python3 evals/check_triggers.py
+# Fresh output directory for this invocation.
+# Only the live trigger run spends subscription quota; check_triggers.py scores the CSV locally.
+eval_run_dir=$(mktemp -d "${TMPDIR:-/tmp}/arch-evals.XXXXXX")
+python3 evals/run_triggers.py --limit 2 --output "$eval_run_dir/smoke.csv"
+python3 evals/check_triggers.py "$eval_run_dir/smoke.csv"  # expected INCOMPLETE for 2/60 rows
 python3 evals/make_fixture.py --check
 python3 evals/run_baseline.py --dry-run
 ```
@@ -33,12 +36,16 @@ They spend subscription quota. A complete sweep starts up to 60 new sessions, in
 the two smoke queries again. The baseline starts up to two more.
 
 ```bash
-python3 evals/run_triggers.py --limit 60 --workers 1 --output evals/results/triggers-full.csv
-python3 evals/run_baseline.py --run --output evals/results/baseline-pair.md
+eval_run_dir=$(mktemp -d "${TMPDIR:-/tmp}/arch-evals.XXXXXX")
+python3 evals/run_triggers.py --limit 60 --workers 1 --output "$eval_run_dir/triggers-full.csv"
+python3 evals/check_triggers.py "$eval_run_dir/triggers-full.csv"
+python3 evals/run_baseline.py --run --output "$eval_run_dir/baseline-pair.md"
 ```
 
-Score a full result explicitly with `python3 evals/check_triggers.py evals/results/triggers-full.csv`.
-The default checker selects the most recently modified `triggers-*.csv`.
+The checker requires an explicit result CSV; checkout modification times do not select evidence.
+Committed `evals/results/triggers-full.csv` and `evals/results/baseline-pair.md` are historical evidence,
+not output destinations for a new run. To score that historical CSV, use
+`python3 evals/check_triggers.py evals/results/triggers-full.csv`.
 Results default to UTC-dated names. Existing result files are never overwritten; pass
 a new `--output` for another run. The session cap is per invocation, not a lifetime budget.
 
@@ -112,12 +119,35 @@ are retained. This intentionally limits diagnosis of redacted competing skills.
   negative query; it is not a false trigger of the target skill.
 - Session errors and unexpected hook activity are excluded from rates and counted as errors.
   Missing observations produce `n/a`, never zero. Coverage is printed for each skill.
-- Exit **0**: all 60 unique corpus rows, no session errors, recall >=90%, false rate <=20%.
-  Exit **1**: an observed routing threshold fails, even on a partial sample.
-  Exit **2**: incomplete or invalid evidence without an observed threshold failure.
+- Exit **0**: valid source lineage, all 60 unique corpus rows, no session errors,
+  recall >=90%, false rate <=20%.
+  Exit **1**: an observed routing threshold fails, even on a partial sample, after validation.
+  Exit **2**: invalid evidence, or incomplete evidence without an observed threshold failure.
 
 The checker validates row IDs and corpus text, rejecting duplicate, unknown or mismatched
-rows. It prints failing queries for later description review. A partial sample cannot
+rows. Every result row (including session errors) must have a 64-digit hexadecimal
+`skill_sha256` and a nonblank `cli_version`. A result set must contain exactly one CLI
+version and one revision per observed skill. Hexadecimal letter case is ignored; CLI
+versions must match exactly. Missing columns, malformed hashes and mixed revisions or
+versions are invalid evidence, not routing failures.
+
+By default, each observed hash must match **this checkout's** `skills/<name>/SKILL.md`,
+using the same SHA-256 helper as the runner. Missing/unreadable current skill files or
+changed bytes prevent a current-source PASS. Re-run the evaluation after changing a
+skill, or explicitly score a coherent older result:
+
+```bash
+python3 evals/check_triggers.py evals/results/triggers-full-after-fix.csv --historical
+```
+
+`--historical` skips only the comparison with current skill bytes. It still validates
+lineage metadata, corpus identity, coverage, session errors and routing thresholds.
+Every verdict (including validation errors) is prefixed `HISTORICAL`; a historical PASS
+is not evidence for the current source. Neither mode starts Claude or requires the
+recorded CLI version to be installed. Hashes cover target SKILL.md bytes only, not scripts,
+other skill descriptions or the full runtime environment; CSV metadata is not a signed attestation.
+
+The checker prints failing queries for later description review. A partial sample cannot
 establish full-suite recall or false-trigger performance. A source-loading failure should
 be investigated before attributing it to description wording.
 

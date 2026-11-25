@@ -1,6 +1,6 @@
 ---
 name: rhino-safe-capture
-description: Rules and tooling for capturing images, sections, or data from Rhino without touching the user's live document — check for a peer session first, read saved files with rhino3dm or work in a spawned Rhino slot, and never leave temporary objects, moved cameras, or silent saves behind. Includes a PreToolUse hook that blocks Rhino MCP calls that would mutate the live doc. Use before any viewport capture, image-prompt capture, clipping-plane section, Make2D, render, or script run through the rhino-mcneel or rhino-community MCP servers, and whenever a task says "capture", "screenshot the model", "render views", or "export from Rhino".
+description: Rules and tooling for capturing images, sections, or data from Rhino without touching the user's live document — check for a peer session first, read saved files with rhino3dm or work in a spawned Rhino slot, and never leave temporary objects, moved cameras, or silent saves behind. Includes a partial regex PreToolUse hook that blocks recognized mutating Rhino MCP calls; it is not a sandbox or proof of read-only behavior. Use before any viewport capture, image-prompt capture, clipping-plane section, Make2D, render, or script run through the rhino-mcneel or rhino-community MCP servers, and whenever a task says "capture", "screenshot the model", "render views", or "export from Rhino".
 ---
 
 # rhino-safe-capture — look at the model without changing it
@@ -59,12 +59,15 @@ Every rhino-mcneel call that omits `slot` targets whatever Rhino is open: usuall
 
 | Call | Decision |
 |---|---|
-| Script with mutating calls (`Objects.Add*/Delete/Hide/…`, clipping planes, `rs.Add*/Delete*/…`, setters like `rs.ObjectLayer(id, layer)`, `.Modified =`, saves, `RunScript`, camera moves) and no `slot` | deny, unless the user-approved marker is present |
+| Script matching recognized mutating patterns (`Objects.Add*/Delete/Hide/…`, clipping planes, `rs.Add*/Delete*/…`, setters like `rs.ObjectLayer(id, layer)`, `.Modified =`, saves, `RunScript`, camera moves) and no `slot` | deny, unless the user-approved marker is present |
 | `open_doc` without `slot` (would import into or clear the user's doc) | deny |
 | `run_command` with Save / Purge / Delete / ClippingPlane / Import / Open / Hide / Lock / Layer and no `slot` | deny |
 | `save_doc` to a path that already exists | deny |
-| Read-only scripts, viewport captures without camera args, anything with your own `slot` | allow |
+| Scripts without a recognized pattern, viewport captures without camera args, anything with your own `slot` | allow (not proof of safety) |
 
 The guard can't tell your slot from an adopted user slot, and it doesn't cover the
 community server's single-object tools (`create_object`, `delete_object`, `boolean_*`). The
-rules above still apply to both. Tests: `python3 tests/test_rhino_live_guard.py`.
+regexes also miss aliases (`rsx.DeleteObjects`), direct imports (`from rhinoscriptsyntax import DeleteObjects`),
+and indirect table calls (`table = sc.doc.Objects; table.Delete(...)`). Treat arbitrary scripts conservatively:
+review them before admission to the live document; if read-only behavior is uncertain, use saved-file analysis
+or a spawned slot. The rules above still apply even when the hook allows a call. Tests: `python3 tests/test_rhino_live_guard.py`.

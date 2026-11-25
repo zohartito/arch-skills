@@ -35,10 +35,20 @@ No id → `[unsourced]` or delete it.
 
 Not found: <sections? elevations? details? say so>.
 
-## Dimensions (written on a drawing/record, or scaled from a stated scale)
+## Dimensions (measured, derived, or explicitly reported)
 
-| What | Value | Source + sheet | Written or scaled (scale) |
+One claim per row. Keep the source + pinpoint and method on that same row, even when
+in separate cells. Choose a provenance form:
+- Measured: `[S1xx p.3]` + `written`, or `[S1xx sheet A101]` + `scaled 1:100`.
+- Derived: ledgered input citations + `[derived: length times width]` (state the actual method).
+- Reported: source citation + `published figure, not a measurement` (no measurement implied).
+
+| What | Value | Source + sheet / ledgered inputs | Written / scaled (scale) / derived method / published figure |
 |---|---|---|---|
+
+Acceptance check: run `python3 scripts/check_ledger.py <dossier> --strict-dimensions`
+from the skill folder. Fix incomplete provenance; do not add a marker unless the cited
+evidence supports it. Record explanations for remaining warnings in VERIFICATION.
 
 ## Inferences for our project (not facts)
 

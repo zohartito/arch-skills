@@ -13,6 +13,8 @@ or an existing different file without --overwrite).
 
 Skipped automatically: dotfiles (.DS_Store) and anything under a folder whose name starts
 with "_superseded", so old versions never reach the lab computer.
+Symlinks in source or destination paths are refused. Manifests replace only regular files,
+using a synced temporary file and atomic publication.
 """
 from __future__ import annotations
 
@@ -21,6 +23,7 @@ import fcntl
 import hashlib
 import os
 import sys
+import tempfile
 from pathlib import Path
 
 MANIFEST_NAME = "MANIFEST-SHA256.txt"
@@ -56,12 +59,28 @@ def is_skipped(relative: Path) -> bool:
     return any(part.startswith(".") or part.startswith("_superseded") for part in relative.parts)
 
 
+def reject_symlinks(path: Path) -> None:
+    if any(p.is_symlink() for p in (path, *path.absolute().parents)):
+        raise ValueError("source and destination paths must not contain symlinks")
+
+
+def require_regular(path: Path) -> None:
+    reject_symlinks(path)
+    if path.exists() and not path.is_file():
+        raise ValueError("file destination must be a regular file")
+
+
 def collect(sources: list[Path]) -> tuple[list[tuple[Path, Path]], list[Path]]:
     """(source file, path relative to dest) pairs, plus the skipped source files."""
     pairs, skipped = [], []
     for source in sources:
+        reject_symlinks(source)
+        if is_skipped(source.absolute()):
+            skipped.append(source)
+            continue
         if source.is_dir():
             for path in sorted(source.rglob("*")):
+                reject_symlinks(path)
                 if not path.is_file():
                     continue
                 relative = path.relative_to(source)
@@ -88,14 +107,43 @@ def fsync_dir(directory: Path) -> None:
 
 
 def copy_synced(source: Path, target: Path) -> None:
+    require_regular(source)
+    require_regular(target)
+    if target.exists() and source.samefile(target):
+        raise ValueError("source and destination are the same file")
     target.parent.mkdir(parents=True, exist_ok=True)
-    with source.open("rb") as reader, target.open("wb") as writer:
-        while block := reader.read(CHUNK):
-            writer.write(block)
-        writer.flush()
-        os.fsync(writer.fileno())
-    os.utime(target, ns=(source.stat().st_atime_ns, source.stat().st_mtime_ns))
+    temporary = None
+    try:
+        with source.open("rb") as reader, tempfile.NamedTemporaryFile(dir=target.parent, delete=False) as writer:
+            temporary = Path(writer.name)
+            while block := reader.read(CHUNK):
+                writer.write(block)
+            writer.flush()
+            os.fsync(writer.fileno())
+        os.utime(temporary, ns=(source.stat().st_atime_ns, source.stat().st_mtime_ns))
+        require_regular(target)
+        os.replace(temporary, target)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
     fsync_dir(target.parent)
+
+
+def write_manifest(manifest: Path, lines: list[str]) -> None:
+    require_regular(manifest)
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=manifest.parent, delete=False) as handle:
+            temporary = Path(handle.name)
+            handle.write("\n".join(lines) + "\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        require_regular(manifest)
+        os.replace(temporary, manifest)
+        fsync_dir(manifest.parent)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
 
 
 def main() -> int:
@@ -107,6 +155,14 @@ def main() -> int:
     args = parser.parse_args()
 
     dest = args.dest.expanduser()
+    try:
+        reject_symlinks(dest)
+        require_regular(dest / MANIFEST_NAME)
+        for path in dest.rglob("*"):
+            reject_symlinks(path)
+    except ValueError as exc:
+        print(f"REFUSED: {exc}", file=sys.stderr)
+        return 2
     mount = mount_point_of(dest)
     if mount in SYSTEM_MOUNTS and not args.allow_local:
         print(f"REFUSED: {dest} is not on a mounted removable volume (nearest mount: {mount}). "
@@ -118,6 +174,9 @@ def main() -> int:
     except FileNotFoundError as missing:
         print(f"REFUSED: source not found: {missing}", file=sys.stderr)
         return 2
+    except ValueError as exc:
+        print(f"REFUSED: {exc}", file=sys.stderr)
+        return 2
     if not pairs:
         print("REFUSED: nothing to copy", file=sys.stderr)
         return 2
@@ -127,6 +186,9 @@ def main() -> int:
         print(f"REFUSED: two sources map to the same name: {sorted(duplicates)}", file=sys.stderr)
         return 2
 
+    if any((dest / r).exists() and path.samefile(dest / r) for path, r in pairs):
+        print("REFUSED: source and destination are the same file", file=sys.stderr)
+        return 2
     source_hashes = {relative: sha256_of(path) for path, relative in pairs}
     conflicts = [r for _, r in pairs if (dest / r).exists() and sha256_of(dest / r) != source_hashes[r]]
     if conflicts and not args.overwrite:
@@ -163,11 +225,11 @@ def main() -> int:
             print(f"kept {relative} (already on the volume, not staged this run)")
             lines.append(f"{sha256_of(path, bypass_cache=True)}  {relative.as_posix()}")
 
-    with manifest.open("w", encoding="utf-8") as handle:
-        handle.write("\n".join(lines) + "\n")
-        handle.flush()
-        os.fsync(handle.fileno())
-    fsync_dir(dest)
+    try:
+        write_manifest(manifest, lines)
+    except (ValueError, OSError) as exc:
+        print(f"REFUSED: could not publish manifest ({type(exc).__name__})", file=sys.stderr)
+        return 2
     os.sync()
 
     print(f"{len(pairs) - failures}/{len(pairs)} verified; manifest {manifest}")
