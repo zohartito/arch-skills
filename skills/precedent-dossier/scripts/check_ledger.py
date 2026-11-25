@@ -4,7 +4,8 @@
 Hard errors (exit 1): missing required columns, malformed or duplicate source ids,
 non-http(s) URLs, empty label/date/class, and notes citing ids absent from the ledger.
 Warnings (exit 0): ledger rows never cited, inline URLs not in the ledger, number+unit
-lines with no source on the same line, boilerplate qualifications, duplicate URLs.
+lines with missing/incomplete provenance, boilerplate qualifications, duplicate URLs.
+With --strict-dimensions, dimension warnings become hard errors (exit 1).
 
 Markdown links whose URL is a ledger row count as citations of that row, so dossiers
 that cite by inline URL (e.g. older dossiers) can be checked too.
@@ -43,6 +44,28 @@ DIMENSION = re.compile(
     r"(?:sq\.?\s*ft|[Ss]quare[- ]f(?:oot|eet)|SF|sf|ft²|ft2|ft|feet|foot|"
     r"mm|cm|m²|m2|m|'|\"|′|″)"
     r"(?![A-Za-z0-9²])"
+)
+# These are structural checks, not verification of a source or its measurements.
+PINPOINT = re.compile(
+    r"\b(?:(?:pp?\.?|pages?|fig(?:ure)?s?\.?)\s*\d+[A-Za-z]?\b|"
+    r"sheet\s+(?:[A-Za-z]+[-.]?)?\d+[A-Za-z0-9.-]*\b|"
+    r"(?:timestamp|time|t)\s*[:=]?\s*\d{1,2}:\d{2}(?::\d{2})?\b)", re.I
+)
+PAGE_FRAGMENT = re.compile(r"#page=[1-9]\d*(?:\b|$)", re.I)
+WRITTEN = re.compile(r"\bwritten\b", re.I)
+SCALED = re.compile(r"\bscaled\b", re.I)
+PUBLISHED = re.compile(r"\bpublished[- ]figures?\b", re.I)
+DERIVED = re.compile(r"\bderived\b", re.I)
+DERIVED_METHOD = re.compile(r"\bderived\s*:\s*([^\[\]\n|]*)", re.I)
+POSITIVE = r"(?:[1-9]\d*(?:\.\d+)?|0?\.\d*[1-9]\d*)"
+SCALE_LENGTH = (
+    rf"{POSITIVE}(?:\s*/\s*{POSITIVE})?\s*"
+    r"(?:mm|cm|m\b|ft\b|in\b|[\"'′″])(?:\s*-\s*\d+\s*[\"″])?"
+)
+SCALE = re.compile(
+    rf"\b(?:scaled(?:\s+at)?|scale)\s*[:=(,]?\s*"
+    rf"(?:{POSITIVE}\s*:\s*{POSITIVE}(?![\w.:])|"
+    rf"{SCALE_LENGTH}\s*=\s*{SCALE_LENGTH})(?![\w.])", re.I
 )
 UNSOURCED_TAG = "[unsourced]"
 BOILERPLATE_SHARE = 0.5   # warn when one qualification text covers more than half the rows
@@ -151,7 +174,32 @@ def check_ledger(ledger_path: Path, report: Report):
     return ids, url_to_id
 
 
-def scan_references(dossier: Path, ledger_ids, url_to_id, report: Report):
+def dimension_provenance(text, has_source, fragment_pinpoint=False):
+    """Return missing evidence for one Markdown claim/row, with URL text removed.
+
+    Inspect the entire row so source and method may occupy separate table cells.
+    Published figures are reported values, not measured dimensions. Derived values
+    need an explicit method and ledgered inputs, not their own drawing scale.
+    """
+    missing = []
+    if not has_source:
+        missing.append("ledgered source/input (S### or ledger URL)")
+    if DERIVED.search(text):
+        method = DERIVED_METHOD.search(text)
+        method = SOURCE_ID.sub("", method[1]).strip(" `*_:;,.()-") if method else ""
+        if not any(char.isalnum() for char in method) or method.lower() in {"tbd", "todo", "unknown", "n/a"}:
+            missing.append("nonempty [derived: method]")
+    elif not PUBLISHED.search(text):
+        if not (PINPOINT.search(text) or fragment_pinpoint):
+            missing.append("source pinpoint (page, sheet, figure or timestamp)")
+        if not (WRITTEN.search(text) or SCALED.search(text)):
+            missing.append("written/scaled marker (or label as a published figure / derived value)")
+        if SCALED.search(text) and not SCALE.search(text):
+            missing.append("explicit scale (e.g. scaled 1:100 or scaled 1/8\"=1'-0\")")
+    return missing
+
+
+def scan_references(dossier: Path, ledger_ids, url_to_id, report: Report, strict_dimensions=False):
     """Scan .md (citations + dimensions) and .json (citations only). Return stats."""
     cited = Counter()
     stats = Counter()
@@ -180,10 +228,12 @@ def scan_references(dossier: Path, ledger_ids, url_to_id, report: Report):
                     report.error("missing-id", f"{where} cites {sid}, which is not in SOURCES.csv")
 
             resolved = False
+            fragment_pinpoint = False
             for url in URL.findall(text):
                 sid = url_to_id.get(normalize_url(url))
                 if sid:
                     resolved = True
+                    fragment_pinpoint |= bool(PAGE_FRAGMENT.search(url))
                     cited[sid] += 1
                     stats["url_refs"] += 1
                 elif is_markdown:
@@ -194,8 +244,14 @@ def scan_references(dossier: Path, ledger_ids, url_to_id, report: Report):
             if UNSOURCED_TAG in line:
                 stats["unsourced_tags"] += 1
                 report.warn("unsourced-tag", f"{where} {clip(line.strip())}")
-            if DIMENSION.search(URL.sub(" ", text)) and not line_ids and not resolved:
-                report.warn("unsourced-dimension", f"{where} {clip(line.strip())}")
+            dimension_text = URL.sub(" ", text)
+            if DIMENSION.search(dimension_text):
+                has_source = bool(line_ids.intersection(ledger_ids)) or resolved
+                missing = dimension_provenance(dimension_text, has_source, fragment_pinpoint)
+                if missing:
+                    kind = "dimension-provenance" if has_source else "unsourced-dimension"
+                    emit = report.error if strict_dimensions else report.warn
+                    emit(kind, f"{where} missing {'; '.join(missing)}: {clip(line.strip())}")
 
     distinct = {}
     for where, url in unledgered:
@@ -227,6 +283,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("dossier", type=Path, help="dossier folder containing SOURCES.csv")
     parser.add_argument("--limit", type=int, default=10, help="items shown per category (default 10)")
+    parser.add_argument("--strict-dimensions", action="store_true",
+                        help="fail on missing/incomplete dimension provenance (default: warn)")
     args = parser.parse_args()
 
     dossier = args.dossier.expanduser().resolve()
@@ -235,7 +293,7 @@ def main():
 
     report = Report()
     ledger_ids, url_to_id = check_ledger(dossier / "SOURCES.csv", report)
-    stats = scan_references(dossier, ledger_ids, url_to_id, report)
+    stats = scan_references(dossier, ledger_ids, url_to_id, report, args.strict_dimensions)
 
     print(f"Dossier: {dossier}")
     print(
