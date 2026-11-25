@@ -232,6 +232,97 @@ class SummaryTests(unittest.TestCase):
                 plugin_eval.summarize(source, existing, Path(tmp, "out.md"), "cmd")
 
 
+SMOKE_JSON = plugin_eval.ROOT / "evals/results/plugin-eval-2026-11-15.json"
+
+
+def run(passed, graders=None, **extra):
+    graders = [{"name": "verdict", "type": "llm", "passed": passed}] if graders is None else graders
+    return {"passed": passed, "graders": graders, **extra}
+
+
+def case(name, without, with_):
+    return {"name": name, "graders": [{"name": "verdict", "type": "llm"}],
+            "arms": {"with": with_ if isinstance(with_, list) else [with_],
+                     "without": without if isinstance(without, list) else [without]}}
+
+
+class PairedOutcomeTests(unittest.TestCase):
+    def outcomes(self, *cases):
+        return plugin_eval.paired_outcomes(plugin_eval.redact({"cases": list(cases)}))
+
+    def test_saved_smoke_json_separates_content_gains_from_invalid_routing_pairs(self):
+        groups = plugin_eval.paired_outcomes(plugin_eval.redact(json.loads(SMOKE_JSON.read_text())))
+        content, routing = groups["content"], groups["routing"]
+        self.assertEqual((content["eligible"], content["observed"]), (2, 2))
+        self.assertEqual([content[k] for k in "GRFH"], [2, 0, 0, 0])
+        self.assertEqual(content["excluded"], [])
+        self.assertEqual((routing["eligible"], routing["observed"]), (4, 2))
+        self.assertEqual([routing[k] for k in "GRFH"], [1, 0, 0, 1])
+        self.assertEqual(sorted(e["case"] for e in routing["excluded"]), ["sheet-review-neg-r45", "sheet-review-pos-r01"])
+        self.assertTrue(all("maximum number of turns" in e["reason"] for e in routing["excluded"]))
+
+    def test_all_four_transitions_and_pass_rate_change(self):
+        g = self.outcomes(case("a-content-g", run(False), run(True)), case("a-content-r", run(True), run(False)),
+                          case("a-content-f", run(False), run(False)), case("a-content-h", run(True), run(True)),
+                          case("a-content-g2", run(False), run(True)))["content"]
+        self.assertEqual([g[k] for k in "GRFH"], [2, 1, 1, 1])
+        self.assertEqual((g["observed"], g["net"], g["ppChange"]), (5, 1, 20.0))
+
+    def test_zero_gains_reports_negative_change(self):
+        g = self.outcomes(case("a-content-r", run(True), run(False)), case("a-content-h", run(True), run(True)))["content"]
+        self.assertEqual((g["G"], g["R"], g["net"], g["ppChange"]), (0, 1, -1, -50.0))
+
+    def test_invalid_and_unpaired_cases_are_excluded_and_listed(self):
+        cases = [case("a-content-none", run(None), run(True)),
+                 case("a-content-str", run(False), run("yes")),
+                 case("a-content-err", run(False), run(True, error="boom in /private/tmp/x")),
+                 case("a-content-abort", run(False), run(True, aborted=True)),
+                 case("a-content-skip", run(False), run(True, skippedPaidGraders=True)),
+                 case("a-content-ungraded", run(False, []), run(True)),
+                 case("a-content-grader-none", run(False, [{"name": "verdict", "passed": None}]), run(True)),
+                 case("a-content-mismatch", run(False, [{"name": "other", "type": "regex", "passed": False}]), run(True)),
+                 case("a-content-missing", [], run(True)),
+                 case("a-content-repeat", [run(False), run(True)], run(True)),
+                 case("a-content-dup", run(False), run(True)), case("a-content-dup", run(True), run(False))]
+        g = self.outcomes(*cases)["content"]
+        self.assertEqual((g["eligible"], g["observed"], g["G"] + g["R"] + g["F"] + g["H"]), (11, 0, 0))
+        self.assertIsNone(g["ppChange"])
+        reasons = {e["case"]: (e["kind"], e["reason"]) for e in g["excluded"]}
+        self.assertEqual(len(reasons), 11)
+        self.assertEqual(reasons["a-content-err"], ("invalid", "with error: boom in <path>"))
+        self.assertEqual(reasons["a-content-abort"], ("invalid", "with aborted"))
+        self.assertEqual(reasons["a-content-skip"], ("invalid", "with skipped grading"))
+        self.assertIn("not boolean", reasons["a-content-none"][1])
+        self.assertIn("not boolean", reasons["a-content-str"][1])
+        self.assertEqual(reasons["a-content-ungraded"], ("invalid", "without grading incomplete"))
+        self.assertEqual(reasons["a-content-grader-none"], ("invalid", "without grading incomplete"))
+        self.assertEqual(reasons["a-content-mismatch"][1], "scored graders differ between arms")
+        self.assertEqual(reasons["a-content-missing"], ("unpaired", "missing arm: without"))
+        self.assertEqual(reasons["a-content-repeat"][0], "unpaired")
+        self.assertEqual(reasons["a-content-dup"], ("unpaired", "duplicate case id (2 entries)"))
+
+    def test_raw_and_redacted_inputs_agree_and_keep_grader_types(self):
+        raw = json.loads(SMOKE_JSON.read_text())
+        once = plugin_eval.redact(raw)
+        twice = plugin_eval.redact(once)
+        self.assertEqual(twice, once)
+        self.assertEqual(plugin_eval.paired_outcomes(twice), plugin_eval.paired_outcomes(once))
+        fresh = plugin_eval.redact(AGGREGATE)
+        self.assertEqual(plugin_eval.redact(fresh), fresh)
+        self.assertEqual([g["type"] for g in fresh["cases"][0]["arms"]["with"][0]["graders"]], ["llm", "tool_used"])
+
+    def test_summarize_writes_paired_section_to_json_and_markdown(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out_json, out_md = Path(tmp, "s.json"), Path(tmp, "s.md")
+            plugin_eval.summarize(SMOKE_JSON, out_json, out_md, "offline")
+            saved = json.loads(out_json.read_text())
+            self.assertEqual(saved["pairedOutcomes"]["content"]["G"], 2)
+            text = out_md.read_text()
+            self.assertIn("| content | 2 | 2 | 1.00 | 2 | 0 | 0 | 0 | 2 | 100.0 |", text)
+            self.assertIn("| routing | 4 | 2 | 0.50 | 1 | 0 | 0 | 1 | 1 | 50.0 |", text)
+            self.assertIn("routing / sheet-review-pos-r01 (invalid): with error: exit 1: Reached maximum", text)
+
+
 TIER1 = {
     "target_path": "/Users/someone/repo/skills/sun-study", "overall_status": "failed", "incomplete_scans": [],
     "severity_counts": {"critical": 0, "high": 1, "medium": 1, "low": 0},
