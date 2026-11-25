@@ -116,11 +116,19 @@ python3 scripts/check_ledger.py <dossier> --strict-dimensions   # from this skil
 ```
 
 Exit 1 = hard errors (bad/missing columns, duplicate or malformed ids, bad URLs, empty
-required fields, notes citing ids that aren't in the ledger) or, with `--strict-dimensions`,
+required fields, notes citing ids that aren't in the ledger, asset-inventory errors below) or, with `--strict-dimensions`,
 missing/incomplete dimension provenance. Without that flag, dimension findings are warnings
 and do not change the exit code. Other warnings stay warnings in either mode: ledger rows
 never cited, inline URLs not in the ledger, `[unsourced]` tags, boilerplate qualifications,
 duplicate URLs.
+
+`ASSET-INVENTORY.json` is a JSON array, one object per saved file:
+`{"path": "assets/00-plan.pdf", "kind": "drawing", "source_id": "S001", "url": "<ledger url>", "bytes": 48213, "sha256": "<64 hex>"}`.
+It is required once `assets/` or `evidence/` holds any file (dossiers with no saved files
+need none). The checker fails on malformed JSON or records, unlisted or missing files,
+duplicate paths, source ids not in the ledger, a `url` that differs from that id's ledger
+URL, and wrong `bytes`/`sha256`. Paths must be dossier-relative; absolute, `..` and
+symlinked paths are rejected before any file is opened, so nothing outside the dossier is read.
 
 For each Markdown line/row with a number + unit, provide one of:
 - **Written:** ledgered source, pinpoint, `written` (e.g. `[S021 p.3, written]`).

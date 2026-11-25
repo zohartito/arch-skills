@@ -7,6 +7,8 @@ python skills/precedent-dossier/tests/test_check_ledger.py --compare BASELINE_SC
 The comparison runs both actual validators on the same synthetic dossiers, not mocks.
 """
 import csv
+import hashlib
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -210,6 +212,85 @@ class DimensionCases(unittest.TestCase):
         self.assertEqual(0, result.returncode)
         self.assertIn("[unledgered-url]", result.stdout)
         self.assertIn("[unsourced-tag]", result.stdout)
+
+
+PDF = b"%PDF-1.4 test plan\n"
+
+
+def asset_record(**overrides):
+    record = {"path": "assets/00-plan.pdf", "kind": "drawing", "source_id": "S001", "url": URL,
+              "bytes": len(PDF), "sha256": hashlib.sha256(PDF).hexdigest()}
+    return {**record, **overrides}
+
+
+class AssetCases(unittest.TestCase):
+    """ASSET-INVENTORY.json is checked against saved files and the ledger."""
+
+    def run_assets(self, inventory=None, files=("assets/00-plan.pdf",), setup=None):
+        with tempfile.TemporaryDirectory(prefix="ledger-test-", dir=ROOT) as tmp:
+            folder = Path(tmp) / "dossier"
+            folder.mkdir()
+            make_dossier(folder, "Plan [S001; S002]")
+            for rel in files:
+                (folder / rel).parent.mkdir(parents=True, exist_ok=True)
+                (folder / rel).write_bytes(PDF)
+            if inventory is not None:
+                text = inventory if isinstance(inventory, str) else json.dumps(inventory)
+                (folder / "ASSET-INVENTORY.json").write_text(text, encoding="utf-8")
+            if setup:
+                setup(folder)
+            return subprocess.run([sys.executable, str(CHECKER), str(folder), "--strict-dimensions"],
+                                  capture_output=True, text=True, encoding="utf-8", errors="replace",
+                                  env={**os.environ, "PYTHONIOENCODING": "utf-8"}, timeout=15)
+
+    def test_valid_inventory_and_legacy_dossier_pass(self):
+        for inventory, files in (([asset_record()], ("assets/00-plan.pdf",)), (None, ())):
+            with self.subTest(inventory=inventory):
+                result = self.run_assets(inventory, files)
+                self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+                self.assertIn("PASS: 0 error(s)", result.stdout)
+
+    def test_bad_inventories_fail_with_diagnostics(self):
+        cases = {
+            "malformed_json": ("[{", "[asset-inventory]", "not valid JSON"),
+            "not_array": ({"path": "assets/00-plan.pdf"}, "[asset-inventory]", "JSON array"),
+            "missing_inventory": (None, "[asset-inventory]", "not found"),
+            "missing_file": ([asset_record(), asset_record(path="assets/01-gone.pdf")],
+                             "[asset-missing]", "assets/01-gone.pdf"),
+            "unlisted_file": ([], "[asset-unlisted]", "assets/00-plan.pdf is saved"),
+            "wrong_bytes": ([asset_record(bytes=1)], "[asset-hash]", "bytes 1 recorded"),
+            "wrong_hash": ([asset_record(sha256="0" * 64)], "[asset-hash]", "sha256 does not match"),
+            "bad_field": ([asset_record(bytes="19", kind="")], "[asset-record]", "kind, bytes"),
+            "duplicate_path": ([asset_record(), asset_record(path="assets\\00-plan.pdf")],
+                               "[asset-path]", "duplicate path"),
+            "unknown_source": ([asset_record(source_id="S999")], "[asset-source]", "S999 is not in"),
+            "url_mismatch": ([asset_record(url="https://example.org/other.pdf")],
+                             "[asset-source]", "does not match S001"),
+            "escaping_path": ([asset_record(), asset_record(path="../SOURCES.csv")],
+                              "[asset-path]", "escapes the dossier"),
+            "absolute_path": ([asset_record(), asset_record(path=str(ROOT / "README.md"))],
+                              "[asset-path]", "is absolute"),
+        }
+        for name, (inventory, kind, message) in cases.items():
+            with self.subTest(case=name):
+                result = self.run_assets(inventory)
+                self.assertEqual(1, result.returncode, result.stdout + result.stderr)
+                self.assertIn(kind, result.stdout)
+                self.assertIn(message, result.stdout)
+
+    def test_symlinked_assets_are_rejected_without_reading_outside(self):
+        def link(folder):
+            outside = folder.parent / "outside.pdf"
+            outside.write_bytes(PDF)
+            try:
+                os.symlink(outside, folder / "assets" / "01-link.pdf")
+            except (OSError, NotImplementedError) as exc:
+                raise unittest.SkipTest(f"cannot create symlinks here: {exc}")
+        record = asset_record(path="assets/01-link.pdf")
+        result = self.run_assets([asset_record(), record], setup=link)
+        self.assertEqual(1, result.returncode, result.stdout + result.stderr)
+        self.assertIn("goes through a symlink", result.stdout)
+        self.assertNotIn("[asset-hash]", result.stdout)
 
 
 def compare(baseline):

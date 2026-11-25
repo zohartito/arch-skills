@@ -2,7 +2,10 @@
 """Validate a precedent dossier: SOURCES.csv integrity and citations in its notes.
 
 Hard errors (exit 1): missing required columns, malformed or duplicate source ids,
-non-http(s) URLs, empty label/date/class, and notes citing ids absent from the ledger.
+non-http(s) URLs, empty label/date/class, notes citing ids absent from the ledger, and
+ASSET-INVENTORY.json problems (missing/malformed inventory when assets/ or evidence/ hold
+files, unlisted/missing files, bad records, unknown source ids, URL mismatches, wrong
+bytes/sha256, duplicate, absolute, escaping or symlinked paths).
 Warnings (exit 0): ledger rows never cited, inline URLs not in the ledger, number+unit
 lines with missing/incomplete provenance, boilerplate qualifications, duplicate URLs.
 With --strict-dimensions, dimension warnings become hard errors (exit 1).
@@ -12,11 +15,14 @@ that cite by inline URL (e.g. older dossiers) can be checked too.
 """
 import argparse
 import csv
+import hashlib
+import json
+import os
 import re
 import sys
 from collections import Counter, defaultdict
 from datetime import date
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from urllib.parse import urlparse
 
 REQUIRED_COLUMNS = [
@@ -68,6 +74,8 @@ SCALE = re.compile(
     rf"{SCALE_LENGTH}\s*=\s*{SCALE_LENGTH})(?![\w.])", re.I
 )
 UNSOURCED_TAG = "[unsourced]"
+INVENTORY = "ASSET-INVENTORY.json"
+ASSET_DIRS = ("assets", "evidence")
 BOILERPLATE_SHARE = 0.5   # warn when one qualification text covers more than half the rows
 BOILERPLATE_MIN_ROWS = 10
 
@@ -267,6 +275,130 @@ def scan_references(dossier: Path, ledger_ids, url_to_id, report: Report, strict
     return stats
 
 
+def asset_target(dossier: Path, raw: str):
+    """Return (path, None) for a safe dossier-relative asset path, else (None, reason).
+
+    Checked before any file is opened: absolute/drive paths, '..' and symlinked
+    components are rejected so validation never reads outside the dossier.
+    """
+    rel = PurePosixPath(raw.replace("\\", "/"))
+    if not raw.strip() or rel.is_absolute() or PureWindowsPath(raw).anchor:
+        return None, "is absolute or empty (use a dossier-relative path)"
+    if any(part == ".." for part in rel.parts):
+        return None, "escapes the dossier ('..')"
+    current = dossier
+    for part in rel.parts:
+        current = current / part
+        if current.is_symlink():
+            return None, f"goes through a symlink ({current.relative_to(dossier).as_posix()})"
+    if not current.resolve().is_relative_to(dossier):
+        return None, "resolves outside the dossier"
+    return current, None
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1 << 20), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def saved_files(dossier: Path, report: Report):
+    """Return {posix relative path} of files under assets/ and evidence/ (symlinks are errors)."""
+    found = set()
+    for folder in ASSET_DIRS:
+        root = dossier / folder
+        if root.is_symlink():
+            report.error("asset-path", f"{folder}/ is a symlink; saved files must live inside the dossier")
+            continue
+        for current, dirs, files in os.walk(root):
+            for name in dirs + files:
+                path = Path(current) / name
+                if path.is_symlink():
+                    report.error("asset-path", f"{path.relative_to(dossier).as_posix()} is a symlink; "
+                                 "save a real copy inside the dossier")
+                elif name in files:
+                    found.add(path.relative_to(dossier).as_posix())
+            dirs[:] = [d for d in dirs if not (Path(current) / d).is_symlink()]
+    return found
+
+
+def check_assets(dossier: Path, ledger_ids, report: Report):
+    """Validate ASSET-INVENTORY.json against saved files and SOURCES.csv. Return stats."""
+    stats = Counter()
+    saved = saved_files(dossier, report)
+    stats["saved_files"] = len(saved)
+    inventory = dossier / INVENTORY
+    if inventory.is_symlink():
+        report.error("asset-inventory", f"{INVENTORY} is a symlink; keep the inventory inside the dossier")
+        return stats
+    if not inventory.is_file():
+        if saved:
+            report.error("asset-inventory", f"{INVENTORY} not found but {len(saved)} saved file(s) exist "
+                         f"under assets/ or evidence/ (e.g. {sorted(saved)[0]})")
+        return stats
+    try:
+        records = json.loads(inventory.read_text(encoding="utf-8-sig"))
+    except (ValueError, UnicodeDecodeError) as exc:
+        report.error("asset-inventory", f"{INVENTORY} is not valid JSON: {exc}")
+        return stats
+    if not isinstance(records, list):
+        report.error("asset-inventory", f"{INVENTORY} must be a JSON array of records")
+        return stats
+
+    listed = set()
+    for index, record in enumerate(records):
+        where = f"{INVENTORY}[{index}]"
+        if not isinstance(record, dict):
+            report.error("asset-record", f"{where} is not an object")
+            continue
+        bad = [f for f in ("path", "kind", "source_id", "url", "sha256")
+               if not isinstance(record.get(f), str) or not record[f].strip()]
+        size = record.get("bytes")
+        if not isinstance(size, int) or isinstance(size, bool) or size < 0:
+            bad.append("bytes")
+        if isinstance(record.get("sha256"), str) and not re.fullmatch(r"[0-9a-fA-F]{64}", record["sha256"]):
+            bad.append("sha256")
+        if bad:
+            report.error("asset-record", f"{where} missing or invalid field(s): {', '.join(dict.fromkeys(bad))} "
+                         "(need path, kind, source_id, url: strings; bytes: integer; sha256: 64 hex)")
+            if "path" in bad:
+                continue
+        raw = record["path"]
+        where = f"{where} {raw}"
+        sid = record.get("source_id")
+        if isinstance(sid, str) and sid.strip():
+            if sid not in ledger_ids:
+                report.error("asset-source", f"{where}: source_id {sid} is not in SOURCES.csv")
+            elif isinstance(record.get("url"), str) and \
+                    normalize_url(record["url"]) != normalize_url(ledger_ids[sid].get("url", "")):
+                report.error("asset-source", f"{where}: url {clip(record['url'], 70)!r} does not match "
+                             f"{sid} in SOURCES.csv ({clip(ledger_ids[sid].get('url', ''), 70)!r})")
+        target, reason = asset_target(dossier, raw)
+        if reason:
+            report.error("asset-path", f"{where}: path {reason}")
+            continue
+        key = target.relative_to(dossier).as_posix()
+        if key in listed:
+            report.error("asset-path", f"{where}: duplicate path; list each saved file once")
+            continue
+        listed.add(key)
+        if not target.is_file():
+            report.error("asset-missing", f"{where}: listed file not found in the dossier")
+            continue
+        stats["assets_checked"] += 1
+        actual = target.stat().st_size
+        if "bytes" not in bad and actual != size:
+            report.error("asset-hash", f"{where}: bytes {size} recorded, file has {actual}")
+        if "sha256" not in bad and sha256_file(target) != record["sha256"].lower():
+            report.error("asset-hash", f"{where}: sha256 does not match the file; re-hash or re-save it")
+
+    for rel in sorted(saved - listed):
+        report.error("asset-unlisted", f"{rel} is saved but not in {INVENTORY}")
+    return stats
+
+
 def print_group(title, groups, limit):
     total = sum(len(v) for v in groups.values())
     print(f"\n{title} ({total})")
@@ -294,6 +426,7 @@ def main():
     report = Report()
     ledger_ids, url_to_id = check_ledger(dossier / "SOURCES.csv", report)
     stats = scan_references(dossier, ledger_ids, url_to_id, report, args.strict_dimensions)
+    asset_stats = check_assets(dossier, ledger_ids, report)
 
     print(f"Dossier: {dossier}")
     print(
@@ -306,6 +439,8 @@ def main():
         f"{stats['unledgered_url_mentions']} unledgered URL mentions, "
         f"{stats['unsourced_tags']} [unsourced] tags"
     )
+    print(f"Assets: {asset_stats['saved_files']} saved under assets/ + evidence/; "
+          f"{asset_stats['assets_checked']} inventory file(s) size/sha256-checked")
     if report.errors:
         print_group("ERRORS", report.errors, args.limit)
     if report.warnings:
