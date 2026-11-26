@@ -3,7 +3,7 @@
 import contextlib
 import io
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
 import sys
 import tempfile
@@ -26,7 +26,7 @@ def frontmatter(text):
 
 
 def cases(files):
-    return sorted({Path(relative).parent for relative in files if relative.endswith("prompt.md")})
+    return sorted({PurePosixPath(relative).parent for relative in files if relative.endswith("prompt.md")})
 
 
 PATH_CASES = [
@@ -98,12 +98,14 @@ class SuiteTests(unittest.TestCase):
     def test_every_trigger_row_and_content_case_is_present(self):
         names = [case.name for case in cases(self.files)]
         self.assertEqual(len(names), len(set(names)))
+        self.assertEqual(plugin_eval.SUITE_SKILLS,
+                         ("sheet-review", "bambu-print-recipes", "sun-study", "physical-model-prep"))
         for skill in plugin_eval.SUITE_SKILLS:
             own = [n for n in names if n.startswith(skill)]
             self.assertEqual(sum("-pos-" in n for n in own), 10)
             self.assertEqual(sum("-neg-" in n for n in own), 5)
-            self.assertGreaterEqual(sum("-content-" in n for n in own), 2)
-            self.assertGreaterEqual(len(own), 6)
+            self.assertGreaterEqual(sum("-content-" in n for n in own), 3)
+            self.assertGreaterEqual(len(own), 18)
 
     def test_prompt_frontmatter_uses_only_documented_keys(self):
         for case in cases(self.files):
@@ -142,6 +144,18 @@ class SuiteTests(unittest.TestCase):
             "upside-down": ("print them upside down, seat on the bed", "print upright with tree supports"),
             "nozzle": ("use the 0.2 mm nozzle", "use a fine nozzle"),
             "layer": ("0.08 mm layers", "0.12 mm layers"),
+            "direct-sun-only": ("This tool is direct sun only; sDA needs a diffuse-sky simulation",
+                                "The daylight factor is about 2.1% and sDA is 55%"),
+            "standard-time": ("PDT 13:00 is entered as 12:00 standard time", "run the study at 13:00 PDT"),
+            "dropped-geometry": ("14 objects had no stored render mesh and were dropped",
+                                 "The courtyard receives 5.2 hours of sun on Dec 21."),
+            "cut-rgb": ("CUT (red) 255,0,0", "use red for cuts"),
+            "score-rgb": ("SCORE (blue) 0,0,255", "use blue for scores"),
+            "score-first": ("set blue (score) to run before red (cut)", "run the red cut first, then the score"),
+            "burn-per-side": ("the measured burn is about 0.3 mm per side", "allow about 0.1 mm per side of kerf"),
+            "ply-cut-setting": ("red cut 100% / 8% / 500", "red cut 100% / 5% / 500"),
+            "starting-point": ("these are starting points, not yet confirmed by a test cut",
+                               "these settings are proven for this laser"),
         }
         for skill, content in plugin_eval.CONTENT.items():
             for _slug, _prompt, graders in content:
@@ -152,6 +166,15 @@ class SuiteTests(unittest.TestCase):
                     pattern = re.compile(spec["pattern"], re.I if "i" in spec.get("flags", "") else 0)
                     self.assertTrue(pattern.search(good), name)
                     self.assertFalse(pattern.search(bad), name)
+
+    def test_new_skill_content_cases_each_have_a_regex_grader(self):
+        for skill in ("sun-study", "physical-model-prep"):
+            content = [c for c in cases(self.files) if c.parent.name == skill and "-content-" in c.name]
+            self.assertGreaterEqual(len(content), 3, skill)
+            for case in content:
+                types = [frontmatter(self.files[r])["type"] for r in self.files if r.startswith(f"{case}/graders/")]
+                self.assertIn("regex", types, case)
+                self.assertIn("tool_used", types, case)
 
     def test_regex_grader_frontmatter_round_trips_the_pattern(self):
         text = self.files["bambu-print-recipes/bambu-print-recipes-content-railing-supports/graders/xy-distance.md"]

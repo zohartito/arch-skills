@@ -208,9 +208,10 @@ and the existing Windows failures in the broader suite.
 ## `claude plugin eval` suite
 
 `evals/plugin-eval/` holds a suite in Claude Code's own
-[plugin eval format](https://code.claude.com/docs/en/plugin-evals) for `sheet-review` and `bambu-print-recipes`:
-the 30 `triggers.csv` rows for those skills (a `tool_used: Skill` grader; negatives require zero calls in both arms)
-and six content cases graded with `regex` and `llm` graders. `.claude-plugin/plugin.json` makes the repository a plugin
+[plugin eval format](https://code.claude.com/docs/en/plugin-evals) for `sheet-review`, `bambu-print-recipes`,
+`sun-study` and `physical-model-prep`: the 60 `triggers.csv` rows for those skills (a `tool_used: Skill` grader;
+negatives require zero calls in both arms) and twelve content cases, three per skill, each tied to a rule in that
+skill's SKILL.md and graded with `regex` and `llm` graders. `.claude-plugin/plugin.json` makes the repository a plugin
 named `arch-skills` and points `experimental.evals` at that directory. It does not change the symlink install above.
 Each run is isolated by the tool: no personal settings, skills, hooks, CLAUDE.md or MCP servers load, unlike the
 trigger runner. Case files are generated; edit `plugin_eval.py`, not the Markdown:
@@ -224,8 +225,8 @@ python3 evals/plugin_eval.py summarize <scratch dir>/aggregate-result.json \
   --json-out evals/results/plugin-eval-<date>.json --md-out evals/results/plugin-eval-<date>.md
 ```
 
-The `smoke` tag selects six cases. Without `--tag` the command runs all 36 cases, by default three runs each in two
-arms (216 agent runs) plus judge calls: that is a sweep, and it spends quota. The judge defaults to Haiku; the agent
+The `smoke` tag selects six cases. Without `--tag` the command runs all 72 cases, by default three runs each in two
+arms (432 agent runs) plus judge calls: that is a sweep, and it spends quota. The judge defaults to Haiku; the agent
 model defaults to the configured one. The tool's raw `aggregate-result.json` contains prompts, replies and local
 paths, so only the summarized JSON is committed. See `results/plugin-eval-2026-11-15.md`.
 

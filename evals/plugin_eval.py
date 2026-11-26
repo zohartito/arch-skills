@@ -15,7 +15,7 @@ from eval_common import ROOT, scrub_paths as scrub
 from run_triggers import load_rows
 
 SUITE = ROOT / "evals/plugin-eval"
-SUITE_SKILLS = ("sheet-review", "bambu-print-recipes")
+SUITE_SKILLS = ("sheet-review", "bambu-print-recipes", "sun-study", "physical-model-prep")
 SMOKE = {"sheet-review-pos-r01", "sheet-review-neg-r45", "sheet-review-content-hairline-small-text",
          "bambu-print-recipes-pos-r04", "bambu-print-recipes-neg-r48", "bambu-print-recipes-content-railing-supports"}
 
@@ -69,6 +69,65 @@ CONTENT = {
           ("verdict", "llm", "PASS if the reply recommends a 0.2 mm nozzle with about 0.08 mm layers, and "
            "build-plate-only tree supports only under overhangs such as the dogs' bellies.\n"
            "FAIL if it recommends the 0.4 mm nozzle as the main choice, or layers of 0.12 mm or more.")]),
+    ],
+    "sun-study": [
+        ("daylight-metrics-refused",
+         "i ran a sun-hours study on my courtyard massing for dec 21. can you also give me the daylight factor and "
+         "sDA for the ground floor rooms from the same model?",
+         [("direct-sun-only", "regex", {"pattern": r"direct[- ]sun[^.\n]{0,40}\bonly\b|\bonly\b[^.\n]{0,40}direct[- ]sun",
+                                        "flags": "i"}),
+          ("verdict", "llm", "PASS if the reply declines to report a daylight factor or sDA, says the sun study is "
+           "direct sun only and that these metrics need a diffuse-sky daylight simulation (such as Radiance or "
+           "honeybee-radiance), and offers only direct-sun results.\n"
+           "FAIL if it reports or estimates a daylight factor or sDA value, or presents direct sun hours as one.")]),
+        ("standard-time-clock",
+         "my site is in los angeles. is the patio in shade at 1:00 pm PDT on june 21, and what clock time should "
+         "the sun study use for that moment?",
+         [("standard-time", "regex", {"pattern": r"\b12(?::00)?\b[^\n]{0,40}\b(?:standard|PST)\b|"
+                                                 r"\b(?:standard|PST)\b[^\n]{0,40}\b12(?::00)?\b", "flags": "i"}),
+          ("verdict", "llm", "PASS if the reply says the sun study uses local standard time with no daylight saving, "
+           "so 13:00 PDT is entered as 12:00, and does not claim a shade answer without running the geometry.\n"
+           "FAIL if it uses 13:00 as the study time, or ignores the PDT to standard time conversion.")]),
+        ("result-provenance",
+         "the sun study on my courtyard .3dm (dec 21, 8-16, 15 min steps, layers 01 WALLS and 04 ROOFS) gave a mean "
+         "of 5.2 sun hours, and summary.json has a warning that 14 objects had no render mesh. write the sentence "
+         "i should put on my board.",
+         [("dropped-geometry", "regex", {"pattern": r"render mesh|ExtractRenderMesh|re-?save", "flags": "i"}),
+          ("verdict", "llm", "PASS if the sentence states the date, the 8-16 window, the 15 minute timestep and the "
+           "layer filter with the 5.2 h figure, AND says that 14 objects without a render mesh were dropped so the "
+           "number may overstate sun until the model is re-saved with meshes.\n"
+           "FAIL if it quotes 5.2 hours without its date, window, timestep or layers, or omits the dropped "
+           "geometry.")]),
+    ],
+    "physical-model-prep": [
+        ("score-before-cut",
+         "set up the laser layers for my 1/8 inch ply chunk base in rhino: it needs cut outlines, deck-board score "
+         "lines and an engraved title. what layers, colours and run order?",
+         [("cut-rgb", "regex", {"pattern": r"255\s*,\s*0\s*,\s*0", "flags": ""}),
+          ("score-rgb", "regex", {"pattern": r"\b0\s*,\s*0\s*,\s*255", "flags": ""}),
+          ("score-first", "regex", {"pattern": r"(?:blue|score)[^.\n]{0,60}\bbefore\b[^.\n]{0,30}(?:red|cut)",
+                                    "flags": "i"}),
+          ("verdict", "llm", "PASS if the reply gives CUT red 255,0,0, SCORE blue 0,0,255, ENGRAVE black 0,0,0 and a "
+           "REFERENCE layer that is turned off before sending, and says blue (score) runs before red (cut) so "
+           "scores land before pieces drop loose.\n"
+           "FAIL if it omits the RGB values, or runs the cut before the score.")]),
+        ("measured-burn",
+         "i drew 3.0 mm circles for 2 mm square brass posts in 3/16 inch basswood ply, cut at 100/5/500 on the uls. "
+         "how much does the laser burn away, and will the posts sit snug?",
+         [("burn-per-side", "regex", {"pattern": r"0\.3\s*mm\s*(?:/|per |a |each )\s*side", "flags": "i"}),
+          ("verdict", "llm", "PASS if the reply says the measured burn was about 0.3 mm per side (the 3.0 mm circle "
+           "cut to about 3.6 mm), that the square posts wobbled in those round holes, and recommends square holes "
+           "turned to the post angle.\n"
+           "FAIL if it uses a generic kerf such as 0.1 mm per side as the measured value, or says the posts fit.")]),
+        ("settings-are-starting-points",
+         "what power, speed and ppi should i use to cut 1/8 inch plywood on the ULS PLS6.150D, and are those "
+         "settings confirmed?",
+         [("ply-cut-setting", "regex", {"pattern": r"100\s*%?\s*/\s*8\s*%?\s*/\s*500", "flags": ""}),
+          ("starting-point", "regex", {"pattern": r"starting[- ]points?|not (?:yet )?(?:been )?confirmed",
+                                       "flags": "i"}),
+          ("verdict", "llm", "PASS if the reply gives red cut 100% power / 8% speed / 500 PPI for 1/8 inch plywood, "
+           "says these are starting points not confirmed by a test cut, and asks for a test square first.\n"
+           "FAIL if it calls the settings confirmed or tested, or gives a different cut setting as the main one.")]),
     ],
 }
 
@@ -136,7 +195,7 @@ def build(suite=SUITE):
 
 def check(suite=SUITE):
     expected = expected_files()
-    on_disk = {str(p.relative_to(suite)) for p in suite.rglob("*.md") if "results" not in p.relative_to(suite).parts}
+    on_disk = {p.relative_to(suite).as_posix() for p in suite.rglob("*.md") if "results" not in p.relative_to(suite).parts}
     stale = sorted(r for r, text in expected.items() if not (suite / r).is_file() or (suite / r).read_text() != text)
     extra = sorted(on_disk - set(expected))
     for relative in stale:
